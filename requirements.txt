@@ -1,0 +1,64 @@
+setuptools==68.2.2
+wheel
+Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+MarkupSafe==2.1.3
+itsdangerous==2.1.2
+click==8.1.7
+blinker==1.6.2
+gunicorn
+
+# Ma'lumotlar bazasi
+SQLAlchemy==2.0.21
+
+# Parol va xavfsizlik
+bcrypt==4.0.1
+cryptography==41.0.5
+passlib==1.7.4
+
+# Ma'lumotlarni qayta ishlash
+pandas==2.0.3
+numpy==1.24.3
+openpyxl==3.1.2
+xlrd==2.0.1
+XlsxWriter==3.1.9
+xlwt==1.3.0
+
+# Fayl yuklash va qayta ishlash
+python-magic==0.4.27
+#python-magic-bin==0.4.14  # Windows uchun
+pillow==10.1.0
+
+# CORS va tarmoq
+Flask-CORS==4.0.0
+requests==2.31.0
+
+# CSV va Excel
+xlrd==2.0.1
+xlwt==1.3.0
+openpyxl==3.1.2
+pandas==2.0.3
+
+# JSON
+simplejson==3.19.2
+
+# Vaqt va sana
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Tizim monitoringi (ixtiyoriy)
+psutil==5.9.6
+
+# Logging
+loguru==0.7.2
+
+# Email yuborish (agar kerak bo'lsa)
+Flask-Mail==0.9.1
+
+# JWT (agar kerak bo'lsa)
+PyJWT==2.8.0
+
+# Testing (ixtiyoriy)
+pytest==7.4.3
+pytest-flask==1.2.0

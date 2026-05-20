@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topshiriqlar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .back-btn { background: #6b7280; color: white; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-btn">← Dashboard</a>
+        <h1>Topshiriqlar</h1>
+        
+        {% if tasks %}
+            {% for task in tasks %}
+            <div style="background: white; padding: 1rem; margin: 1rem 0; border-radius: 8px;">
+                <h3>{{ task[1] }}</h3>
+                <p>{{ task[2] }}</p>
+                <small>Yaratilgan: {{ task[4] }}</small>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>Hozircha topshiriq yo'q</p>
+        {% endif %}
+    </div>
+</body>
+</html>

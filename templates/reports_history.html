@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hisobotlar Tarixi - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}" id="dark-style" disabled>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-color);
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .filter-group select, .filter-group input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-filter {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        
+        .reports-table {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+        
+        .table-header {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            font-weight: bold;
+        }
+        
+        .table-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+        
+        .table-row:hover {
+            background: #f8fafc;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-rated {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            background: var(--light-color);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        
+        .btn-view {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-download {
+            background: var(--secondary-color);
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            border-radius: var(--border-radius);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .table-header, .table-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="themeToggle" class="theme-btn">
+        <i class="fas fa-moon"></i>
+    </button>
+    <div class="container">
+        <!-- Sarlavha -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-history"></i> Hisobotlar Tarixi</h1>
+                <p>Barcha topshirilgan hisobotlaringiz</p>
+            </div>
+            <a href="/dashboard" style="color: var(--primary-color); text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Dashboardga qaytish
+            </a>
+        </div>
+        
+        <!-- Statistik kartalar -->
+        <div class="stats-cards" id="statsContainer">
+            <!-- JavaScript bilan to'ldiriladi -->
+        </div>
+        
+        <!-- Filtrlash -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="statusFilter">Holat:</label>
+                <select id="statusFilter">
+                    <option value="all">Barchasi</option>
+                    <option value="pending">Kutilmoqda</option>
+                    <option value="rated">Baholangan</option>
+                    <option value="rejected">Rad etilgan</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="monthFilter">Oy:</label>
+                <input type="month" id="monthFilter">
+            </div>
+            
+            <div class="filter-group">
+                <label for="search">Qidirish:</label>
+                <input type="text" id="search" placeholder="Hisobot nomi...">
+            </div>
+            
+            <button class="btn-filter" onclick="loadReports()">
+                <i class="fas fa-filter"></i> Filtrlash
+            </button>
+        </div>
+        
+        <!-- Hisobotlar jadvali -->
+        <div class="reports-table">
+            <div class="table-header">
+                <div>Oy/Yil</div>
+                <div>Tadbirlar</div>
+                <div>Materiallar</div>
+                <div>Xavfsizlik</div>
+                <div>Holat</div>
+                <div>Harakatlar</div>
+            </div>
+            
+            <div id="reportsList">
+                <!-- JavaScript bilan to'ldiriladi -->
+            </div>
+        </div>
+        
+        <!-- Hisobotni ko'rish modali -->
+        <div id="viewModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Hisobot ma'lumotlari</h2>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- JavaScript bilan to'ldiriladi -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // Sahifa yuklanganda hisobotlarni yuklash
+        document.addEventListener('DOMContentLoaded', function() {
+            loadReports();
+            setupEventListeners();
+        });
+        
+        // Event listenerlarni o'rnatish
+        function setupEventListeners() {
+            // Enter bosganda filtrlash
+            document.getElementById('search').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadReports();
+                }
+            });
+        }
+        
+        // Hisobotlarni yuklash
+        async function loadReports() {
+            try {
+                const status = document.getElementById('statusFilter').value;
+                const month = document.getElementById('monthFilter').value;
+                const search = document.getElementById('search').value;
+                
+                // URL yaratish
+                let url = '/api/user/reports_history';
+                const params = new URLSearchParams();
+                
+                if (status !== 'all') params.append('status', status);
+                if (month) params.append('month', month);
+                if (search) params.append('search', search);
+                
+                if (params.toString()) {
+                    url += '?' + params.toString();
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStats(data.stats);
+                    updateReportsTable(data.reports);
+                } else {
+                    alert('Xatolik: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Hisobotlarni yuklashda xatolik:', error);
+                alert('Hisobotlarni yuklashda xatolik yuz berdi.');
+            }
+        }
+        
+        // Statistikani yangilash
+        function updateStats(stats) {
+            const statsContainer = document.getElementById('statsContainer');
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h3>Jami hisobotlar</h3>
+                    <div class="value">${stats.total}</div>
+                    <p>Umumiy soni</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Baholanganlar</h3>
+                    <div class="value">${stats.rated}</div>
+                    <p>Baholangan hisobotlar</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Kutilayotgan</h3>
+                    <div class="value">${stats.pending}</div>
+                    <p>Baholanish kutilmoqda</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>O'rtacha ball</h3>
+                    <div class="value">${stats.avg_score}</div>
+                    <p>O'rtacha baho</p>
+                </div>
+            `;
+        }
+        
+        // Hisobotlar jadvalini yangilash
+        function updateReportsTable(reports) {
+            const reportsList = document.getElementById('reportsList');
+            
+            if (!reports || reports.length === 0) {
+                reportsList.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: var(--text-light);">
+                        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h3>Hali hisobot topshirmagansiz</h3>
+                        <p>Birinchi hisobotingizni topshirish uchun <a href="/submit_report" style="color: var(--primary-color);">bu yerga</a> bosing</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            reports.forEach(report => {
+                const statusClass = `status-${report.status}`;
+                const statusText = getStatusText(report.status);
+                
+                html += `
+                    <div class="table-row">
+                        <div>${report.month_year}</div>
+                        <div>${report.event_count || 0}</div>
+                        <div>${report.material_count || 0}</div>
+                        <div>${report.safety_score || 0}/10</div>
+                        <div><span class="status-badge ${statusClass}">${statusText}</span></div>
+                        <div>
+                            <button class="btn-action btn-view" onclick="viewReport(${report.id})">
+                                <i class="fas fa-eye"></i> Ko'rish
+                            </button>
+                            ${report.file_path ? `
+                            <button class="btn-action btn-download" onclick="downloadReport(${report.id})">
+                                <i class="fas fa-download"></i> Yuklash
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            reportsList.innerHTML = html;
+        }
+        
+        // Holat matnini olish
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Kutilmoqda',
+                'rated': 'Baholangan',
+                'rejected': 'Rad etilgan',
+                'approved': 'Tasdiqlangan'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // Hisobotni ko'rish
+        function viewReport(reportId) {
+            fetch(`/api/user/get_report/${reportId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showReportModal(data.report);
+                    } else {
+                        alert('Xatolik: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Hisobotni ko\'rishda xatolik:', error);
+                    alert('Hisobotni ko\'rishda xatolik yuz berdi.');
+                });
+        }
+        
+        // Hisobot modali
+        function showReportModal(report) {
+            const modal = document.getElementById('viewModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div>
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Hisobot ma'lumotlari</h3>
+                        <p><strong>Oy/Yil:</strong> ${report.month_year}</p>
+                        <p><strong>Tadbirlar soni:</strong> ${report.event_count}</p>
+                        <p><strong>Materiallar soni:</strong> ${report.material_count}</p>
+                        <p><strong>Xabarlar soni:</strong> ${report.message_count}</p>
+                        <p><strong>Xavfsizlik ko'rsatkichi:</strong> ${report.safety_score}/10</p>
+                        <p><strong>Holat:</strong> <span class="status-badge status-${report.status}">${getStatusText(report.status)}</span></p>
+                        <p><strong>Topshirilgan sana:</strong> ${new Date(report.submitted_date).toLocaleString('uz-UZ')}</p>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Tavsif</h3>
+                        <div style="background: #f8fafc; padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1rem;">
+                            ${report.description || 'Tavsif yo\'q'}
+                        </div>
+                        
+                        ${report.challenges ? `
+                        <h4 style="color: var(--secondary-color);">Qiyinchiliklar:</h4>
+                        <div style="background: #fef3c7; padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1rem;">
+                            ${report.challenges}
+                        </div>
+                        ` : ''}
+                        
+                        ${report.suggestions ? `
+                        <h4 style="color: var(--secondary-color);">Takliflar:</h4>
+                        <div style="background: #d1fae5; padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1rem;">
+                            ${report.suggestions}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Agar baholangan bo'lsa, baholash ma'lumotlarini ko'rsatish
+            if (report.status === 'rated' && (report.faollik || report.total)) {
+                html += `
+                    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 2px solid var(--light-color);">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Baholash natijalari</h3>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
+                            <div style="background: #f0f9ff; padding: 1rem; border-radius: var(--border-radius);">
+                                <div style="font-size: 0.9rem; color: var(--text-light);">Faollik</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${report.faollik || 0}</div>
+                            </div>
+                            
+                            <div style="background: #f0f9ff; padding: 1rem; border-radius: var(--border-radius);">
+                                <div style="font-size: 0.9rem; color: var(--text-light);">Tashabbus</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${report.tashabbus || 0}</div>
+                            </div>
+                            
+                            <div style="background: #f0f9ff; padding: 1rem; border-radius: var(--border-radius);">
+                                <div style="font-size: 0.9rem; color: var(--text-light);">Intizom</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${report.intizom || 0}</div>
+                            </div>
+                            
+                            <div style="background: #f0f9ff; padding: 1rem; border-radius: var(--border-radius);">
+                                <div style="font-size: 0.9rem; color: var(--text-light);">Ta'sir</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${report.tasir || 0}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <div style="font-size: 2rem; font-weight: bold; color: var(--secondary-color);">
+                                Umumiy ball: ${report.total || 0}/20
+                            </div>
+                        </div>
+                        
+                        ${report.rating_comment ? `
+                        <div style="margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: var(--border-radius);">
+                            <h4 style="color: var(--secondary-color);">Admin sharhi:</h4>
+                            <p>${report.rating_comment}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            // Admin sharhi
+            if (report.admin_comment) {
+                html += `
+                    <div style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: var(--border-radius);">
+                        <h4 style="color: #92400e;">Admin sharhi:</h4>
+                        <p>${report.admin_comment}</p>
+                    </div>
+                `;
+            }
+            
+            modalBody.innerHTML = html;
+            modal.style.display = 'block';
+        }
+        
+        // Hisobotni yuklab olish
+        function downloadReport(reportId) {
+            window.open(`/api/user/download_report/${reportId}`, '_blank');
+        }
+        
+        // Modalni yopish
+        function closeModal() {
+            document.getElementById('viewModal').style.display = 'none';
+        }
+        
+        // Tashqariga bosganda modalni yopish
+        window.onclick = function(event) {
+            const modal = document.getElementById('viewModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hisobot topshirish - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .report-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        .back-btn {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .report-form {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .form-section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .section-title i {
+            color: var(--secondary-color);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .form-group label .required {
+            color: #dc2626;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+        
+        .form-control.select {
+            background: white;
+            cursor: pointer;
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .help-text {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+        
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--secondary-color);
+        }
+        
+        .file-upload i {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-list {
+            margin-top: 1rem;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f3f4f6;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-item i {
+            color: var(--secondary-color);
+        }
+        
+        .remove-file {
+            color: #dc2626;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+        }
+        
+        .counter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .counter-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .counter-btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .counter-value {
+            min-width: 60px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .rating-slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e5e7eb;
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        .rating-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .slider-value {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 0.5rem;
+        }
+        
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .btn-submit {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-submit:hover {
+            background: var(--secondary-color);
+        }
+        
+        .btn-draft {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        /* Tungi rejim */
+        body.dark-mode .report-form {
+            background: #374151;
+        }
+        
+        body.dark-mode .form-control {
+            background: #4b5563;
+            border-color: #6b7280;
+            color: white;
+        }
+        
+        body.dark-mode .file-upload {
+            border-color: #6b7280;
+        }
+        
+        body.dark-mode .file-item {
+            background: #4b5563;
+        }
+        
+        @media (max-width: 768px) {
+            .report-container {
+                padding: 1rem;
+            }
+            
+            .report-form {
+                padding: 1.5rem;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .btn-submit, .btn-draft {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tungi/Kunduz rejim tugmasi -->
+    <button id="themeToggle" class="theme-btn">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="report-container">
+        <!-- Sahifa sarlavhasi -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-file-upload"></i> Oylik hisobot topshirish</h1>
+                <p>Parlament faoliyati bo'yicha oylik hisobot</p>
+            </div>
+            <a href="/dashboard" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Orqaga
+            </a>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Hisobot forması -->
+        <form method="POST" action="/submit_report" enctype="multipart/form-data" class="report-form">
+            <!-- 1. Asosiy ma'lumotlar -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-info-circle"></i> Asosiy ma'lumotlar
+                </h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="month_year">Hisobot oyi <span class="required">*</span></label>
+                        <select id="month_year" name="month_year" class="form-control select" required>
+                            <option value="">-- Oyni tanlang --</option>
+                            <option value="01">Yanvar</option>
+                            <option value="02">Fevral</option>
+                            <option value="03">Mart</option>
+                            <option value="04">Aprel</option>
+                            <option value="05">May</option>
+                            <option value="06">Iyun</option>
+                            <option value="07">Iyul</option>
+                            <option value="08">Avgust</option>
+                            <option value="09">Sentabr</option>
+                            <option value="10">Oktabr</option>
+                            <option value="11">Noyabr</option>
+                            <option value="12">Dekabr</option>
+                        </select>
+                    </div>
+                    
+
+                </div>
+                
+                <div class="form-group">
+                    <label for="full_name">To'liq ism</label>
+                    <input type="text" id="full_name" name="full_name" class="form-control" value="{{ session.full_name }}" readonly>
+                </div>
+            </div>
+            
+            <!-- 2. Faoliyat ko'rsatkichlari -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i> Faoliyat ko'rsatkichlari
+                </h2>
+                
+                <div class="form-group">
+                    <label for="event_count">
+                        <i class="fas fa-calendar-check"></i> O'tkazilgan tadbirlar soni <span class="required">*</span>
+                    </label>
+                    <div class="counter">
+                        <button type="button" class="counter-btn" onclick="decrement('event_count')">-</button>
+                        <input type="number" id="event_count" name="event_count" class="counter-value" value="0" min="0" max="100" required>
+                        <button type="button" class="counter-btn" onclick="increment('event_count')">+</button>
+                    </div>
+                    <div class="help-text">Ma'ruza, seminar, ochiq darslar, aksiyalar, fleshmoblar va boshqalar</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="material_count">
+                        <i class="fas fa-file-alt"></i> Aniqlangan profilaktik materiallar soni <span class="required">*</span>
+                    </label>
+                    <div class="counter">
+                        <button type="button" class="counter-btn" onclick="decrement('material_count')">-</button>
+                        <input type="number" id="material_count" name="material_count" class="counter-value" value="0" min="0" max="50" required>
+                        <button type="button" class="counter-btn" onclick="increment('material_count')">+</button>
+                    </div>
+                    <div class="help-text">Real va virtual yozuvlar, videoroliklar, reklama materiallari</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message_count">
+                        <i class="fas fa-envelope"></i> Vakolatli idoralarga yuborilgan xabarlar soni <span class="required">*</span>
+                    </label>
+                    <div class="counter">
+                        <button type="button" class="counter-btn" onclick="decrement('message_count')">-</button>
+                        <input type="number" id="message_count" name="message_count" class="counter-value" value="0" min="0" max="30" required>
+                        <button type="button" class="counter-btn" onclick="increment('message_count')">+</button>
+                    </div>
+                    <div class="help-text">Shubhali holatlar haqida rasmiy xabarlar</div>
+                </div>
+            </div>
+            
+            <!-- 3. Xavfsizlik ko'rsatkichi -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-shield-alt"></i> Xavfsizlik ko'rsatkichi
+                </h2>
+                
+                <div class="form-group">
+                    <label for="safety_score">
+                        Ta'lim muassasalari va mahallalarda xavfsiz muht ko'rsatkichlari <span class="required">*</span>
+                    </label>
+                    <input type="range" id="safety_score" name="safety_score" class="rating-slider" min="1" max="10" value="5" required>
+                    <div class="slider-value" id="safety_value">5/10</div>
+                    <div class="slider-labels">
+                        <span>Yomonlashdi</span>
+                        <span>O'zgarmadi</span>
+                        <span>Yaxshilandi</span>
+                    </div>
+                    <div class="help-text">1-3: Yomonlashdi, 4-6: O'zgarmadi, 7-10: Yaxshilandi</div>
+                </div>
+            </div>
+            
+            <!-- 4. Qo'shimcha ma'lumotlar -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-sticky-note"></i> Qo'shimcha ma'lumotlar
+                </h2>
+                
+                <div class="form-group">
+                    <label for="description">
+                        <i class="fas fa-align-left"></i> Qisqacha tavsif (ixtiyoriy)
+                    </label>
+                    <textarea id="description" name="description" class="form-control" placeholder="Qo'shimcha izohlar, kuzatishlar, takliflar..."></textarea>
+                    <div class="help-text">Max 500 ta belgi</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="challenges">
+                        <i class="fas fa-exclamation-triangle"></i> Qiyinchiliklar (ixtiyoriy)
+                    </label>
+                    <textarea id="challenges" name="challenges" class="form-control" placeholder="Faoliyatda duch kelgan qiyinchiliklar..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="suggestions">
+                        <i class="fas fa-lightbulb"></i> Takliflar (ixtiyoriy)
+                    </label>
+                    <textarea id="suggestions" name="suggestions" class="form-control" placeholder="Loyihani yaxshilash bo'yicha takliflar..."></textarea>
+                </div>
+            </div>
+            
+            <!-- 5. Fayl yuklash -->
+            <div class="form-section">
+                <h2 class="section-title">
+                    <i class="fas fa-paperclip"></i> Fayllarni yuklash (ixtiyoriy)
+                </h2>
+                
+                <div class="file-upload" onclick="document.getElementById('report_file').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Faylni yuklash uchun bosing yoki sudrab tashlang</h3>
+                    <p>PDF, Word, Excel, rasm yoki arxiv fayllari (maks. 10MB)</p>
+                    <input type="file" id="report_file" name="report_file" class="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip,.rar">
+                </div>
+                
+                <div class="file-list" id="fileList">
+                    <!-- Fayllar ro'yxati bu yerda ko'rinadi -->
+                </div>
+                
+                <div class="help-text">
+                    <i class="fas fa-info-circle"></i> Tadbirlar fotosuratlari, videolari, vakolatli idoralardan javoblar, hujjatlar nusxalari
+                </div>
+            </div>
+            
+            <!-- 6. Tugmalar -->
+            <div class="form-actions">
+                <div>
+                    <button type="button" class="btn-draft" onclick="saveAsDraft()">
+                        <i class="far fa-save"></i> Qoralamaga saqlash
+                    </button>
+                </div>
+                
+                <div>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Hisobotni topshirish
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Hisobot forması uchun JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Slider qiymatini ko'rsatish
+            const safetySlider = document.getElementById('safety_score');
+            const safetyValue = document.getElementById('safety_value');
+            
+            safetySlider.addEventListener('input', function() {
+                safetyValue.textContent = this.value + '/10';
+            });
+            
+            // Fayl yuklash
+            const fileInput = document.getElementById('report_file');
+            const fileList = document.getElementById('fileList');
+            
+            fileInput.addEventListener('change', function() {
+                fileList.innerHTML = '';
+                
+                for (let file of this.files) {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    
+                    fileItem.innerHTML = `
+                        <div>
+                            <i class="fas fa-file"></i> ${file.name} 
+                            <span style="color: var(--text-light); font-size: 0.9rem;">
+                                (${formatFileSize(file.size)})
+                            </span>
+                        </div>
+                        <button type="button" class="remove-file" onclick="removeFile(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    
+                    fileList.appendChild(fileItem);
+                }
+            });
+            
+            // Matn maydonlari belgi chegarasi
+            const textareas = document.querySelectorAll('textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    if (this.value.length > 500) {
+                        this.value = this.value.substring(0, 500);
+                    }
+                    
+                    // Qolgan belgilar sonini ko'rsatish
+                    const remaining = 500 - this.value.length;
+                    let helpText = this.nextElementSibling;
+                    if (helpText && helpText.classList.contains('help-text')) {
+                        helpText.textContent = `${remaining} ta belgi qoldi`;
+                    }
+                });
+            });
+            
+            // Oy tanlashda joriy oyni avtomatik tanlash
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth() + 1;
+            const currentYear = currentDate.getFullYear();
+            const monthYearValue = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
+            
+            const monthSelect = document.getElementById('month_year');
+            for (let option of monthSelect.options) {
+                if (option.value === monthYearValue) {
+                    option.selected = true;
+                    break;
+                }
+            }
+        });
+        
+        // Counter funksiyalari
+        function increment(inputId) {
+            const input = document.getElementById(inputId);
+            const max = parseInt(input.getAttribute('max')) || 100;
+            if (parseInt(input.value) < max) {
+                input.value = parseInt(input.value) + 1;
+            }
+        }
+        
+        function decrement(inputId) {
+            const input = document.getElementById(inputId);
+            const min = parseInt(input.getAttribute('min')) || 0;
+            if (parseInt(input.value) > min) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+        
+        // Fayl o'lchamini formatlash
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Faylni o'chirish
+        function removeFile(button) {
+            const fileItem = button.parentElement;
+            fileItem.remove();
+            
+            // Input ni tozalash
+            document.getElementById('report_file').value = '';
+            document.getElementById('fileList').innerHTML = '';
+        }
+        
+        // Qoralamaga saqlash
+        function saveAsDraft() {
+            if (confirm('Hisobotni qoralamaga saqlashni istaysizmi? Keyinroq toʻldirishni davom ettirishingiz mumkin.')) {
+                // Bu yerda AJAX orqali serverga yuborish mumkin
+                // Hozircha oddiy xabar
+                alert('Qoralamaga saqlandi! Dashboard sahifasidan davom ettirishingiz mumkin.');
+                window.location.href = '/dashboard';
+            }
+        }
+        
+        // Formani yuborishdan oldin tekshirish
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const requiredFields = this.querySelectorAll('[required]');
+            let valid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    valid = false;
+                    field.style.borderColor = '#dc2626';
+                    
+                    // Xabar ko'rsatish
+                    const errorMsg = document.createElement('div');
+                    errorMsg.style.color = '#dc2626';
+                    errorMsg.style.fontSize = '0.85rem';
+                    errorMsg.style.marginTop = '0.25rem';
+                    errorMsg.textContent = 'Bu maydon toʻldirilishi shart';
+                    
+                    if (!field.nextElementSibling || !field.nextElementSibling.classList.contains('error-msg')) {
+                        field.insertAdjacentElement('afterend', errorMsg);
+                        errorMsg.classList.add('error-msg');
+                    }
+                } else {
+                    field.style.borderColor = '';
+                    const errorMsg = field.nextElementSibling;
+                    if (errorMsg && errorMsg.classList.contains('error-msg')) {
+                        errorMsg.remove();
+                    }
+                }
+            });
+            
+            if (!valid) {
+                e.preventDefault();
+                alert('Iltimos, barcha majburiy maydonlarni toʻldiring!');
+            } else {
+                // Yuborilayotganini bildirish
+                const submitBtn = this.querySelector('.btn-submit');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuborilmoqda...';
+                submitBtn.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

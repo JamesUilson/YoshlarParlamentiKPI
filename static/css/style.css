@@ -1,0 +1,1348 @@
+/* ======================== */
+/* 1. ASOSIY O'ZGARUVCHILAR  */
+/* ======================== */
+:root {
+    /* Yoshlar Parlamenti — Brend ranglar */
+    --primary:         #2563EB;   /* Safir ko'k */
+    --primary-dark:    #1A3A6B;   /* Qirollik ko'k */
+    --gold:            #D4AF37;   /* Oltin */
+    --gold-light:      #F0D060;   /* Ochiq oltin */
+    --navy:            #0A1628;   /* Chuqur ko'k */
+    --secondary:       #5B6A82;
+    --bg-body:         #F8F5EE;   /* Krem */
+    --bg-card:         #FFFFFF;
+    --text-main:       #0A1628;
+    --text-muted:      #5B6A82;
+    --shadow:          0 8px 32px rgba(10,22,40,0.1);
+    --border-radius:   18px;
+    --transition:      all 0.3s ease;
+
+    --primary-color:   #1A3A6B;
+    --secondary-color: #2563EB;
+    --accent-color:    #5B6A82;
+    --light-color:     #F8F5EE;
+    --dark-color:      #0A1628;
+    --text-color:      #0A1628;
+    --text-light:      #5B6A82;
+    --border-radius:   12px;
+    --box-shadow:      0 4px 16px rgba(10,22,40,0.1);
+}
+
+/* Tungi rejim */
+body.dark-mode {
+    --primary:      #60A5FA;
+    --primary-dark: #2563EB;
+    --gold:         #F0D060;
+    --bg-body:      #0A1628;
+    --bg-card:      #0F2040;
+    --text-main:    #EEF2FF;
+    --text-muted:   #94A3B8;
+    --shadow:       0 8px 32px rgba(0,0,0,0.4);
+
+    --light-color:  #0A1628;
+    --dark-color:   #EEF2FF;
+    --text-color:   #EEF2FF;
+    --text-light:   #94A3B8;
+    --border-color: #1A3A6B;
+    --box-shadow:   0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* ======================== */
+/* 2. UMUMIY STILLAR        */
+/* ======================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    line-height: 1.6;
+    transition: var(--transition);
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* ======================== */
+/* 3. HEADER VA NAVIGATSIYA */
+/* ======================== */
+header {
+    background: rgba(248, 245, 238, 0.97);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 16px rgba(10,22,40,0.08);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(212,175,55,0.15);
+}
+
+body.dark-mode header {
+    background: rgba(10, 22, 40, 0.97);
+    border-bottom-color: rgba(212,175,55,0.2);
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    padding: 0.5rem 0;
+}
+
+.logo img {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+}
+
+.logo-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    background: linear-gradient(135deg, #0A1628, #2563EB);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.logo-text p {
+    font-size: 0.72rem;
+    color: #D4AF37;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+/* Desktop navigatsiya */
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    align-items: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: var(--transition);
+    padding: 0.5rem 1rem;
+    position: relative;
+    border-radius: 8px;
+}
+
+.nav-links a:hover {
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.nav-links a:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #1A3A6B, #2563EB) !important;
+    color: white !important;
+    padding: 0.6rem 1.8rem !important;
+    border-radius: 50px;
+    transition: var(--transition) !important;
+    margin-left: 1rem;
+    box-shadow: 0 4px 15px rgba(37,99,235,0.25);
+    font-weight: 700 !important;
+}
+
+.btn-login:hover {
+    background: linear-gradient(135deg, #D4AF37, #F0D060) !important;
+    color: #0A1628 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212,175,55,0.4);
+}
+
+.btn-login:hover::after {
+    display: none;
+}
+
+.btn-login:hover::after {
+    display: none;
+}
+
+/* Hamburger menyu tugmasi (faqat mobil) */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 21px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+}
+
+.hamburger span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: var(--transition);
+}
+
+/* ======================== */
+/* 4. HERO SECTION          */
+/* ======================== */
+.hero {
+    padding: 6rem 2rem;
+    text-align: center;
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.1) 0%, transparent 70%);
+    z-index: -1;
+}
+
+.hero h2 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+    line-height: 1.2;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero p {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    max-width: 700px;
+    margin: 0 auto 3rem;
+}
+
+.hero-btns {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 1.1rem;
+    display: inline-block;
+    transition: var(--transition);
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(37, 99, 235, 0.4);
+}
+
+.btn-outline {
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    background: transparent;
+}
+
+.btn-outline:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-5px);
+}
+
+/* ======================== */
+/* 5. STATS SECTION        */
+/* ======================== */
+.stats-container {
+    max-width: 1000px;
+    margin: -2rem auto 3rem;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 10;
+}
+
+.stats-bar {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 2.5rem;
+    display: flex;
+    justify-content: space-around;
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+    gap: 2rem;
+    border: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.stat-item {
+    text-align: center;
+    flex: 1;
+    min-width: 150px;
+}
+
+.stat-item h3 {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    font-weight: 800;
+}
+
+.stat-item p {
+    font-weight: bold;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+/* ======================== */
+/* 6. UMUMIY SECTION       */
+/* ======================== */
+.section {
+    padding: 5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.section-header h2 {
+    font-size: 2.5rem;
+    color: var(--text-main);
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-block;
+}
+
+.section-header h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70px;
+    height: 3px;
+    background: linear-gradient(90deg, #D4AF37, #2563EB);
+    border-radius: 2px;
+}
+
+.section-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ======================== */
+/* 7. KARTALAR             */
+/* ======================== */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2.5rem;
+}
+
+.card {
+    background: var(--bg-card);
+    padding: 3rem 2rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(37, 99, 235, 0.1);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #D4AF37, #2563EB);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--shadow);
+}
+
+.card:hover::before {
+    transform: scaleX(1);
+}
+
+.card-icon {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card h3 {
+    margin-bottom: 1rem;
+    color: var(--text-main);
+    font-size: 1.5rem;
+}
+
+.card p {
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+
+/* ======================== */
+/* 8. GALEREYA             */
+/* ======================== */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.gallery-item {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    height: 250px;
+    position: relative;
+    cursor: pointer;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.gallery-item:hover img {
+    transform: scale(1.1);
+}
+
+.gallery-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.gallery-item:hover::after {
+    opacity: 1;
+}
+
+/* ======================== */
+/* 9. ROL KARTALARI        */
+/* ======================== */
+.role-card {
+    background: var(--bg-card);
+    padding: 2rem;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    border-bottom: 4px solid #D4AF37;
+    border-left: 3px solid transparent;
+    transition: var(--transition);
+    height: 100%;
+}
+
+.role-card:hover {
+    border-bottom-color: #2563EB;
+    border-left-color: #D4AF37;
+}
+
+.role-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow);
+}
+
+/* ======================== */
+/* 10. TIMELINE            */
+/* ======================== */
+.timeline {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.timeline-item {
+    background: var(--bg-card);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
+    border-left: 5px solid #D4AF37;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.timeline-item:hover {
+    transform: translateX(10px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.month {
+    display: inline-block;
+    background: linear-gradient(135deg, #D4AF37, #F0D060);
+    color: #0A1628;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ======================== */
+/* 11. ALOQA BO'LIMI       */
+/* ======================== */
+.contact-section {
+    background: var(--bg-card);
+    margin-bottom: 0;
+    padding-bottom: 6rem;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    text-align: center;
+}
+
+.contact-item {
+    padding: 2rem;
+    background: var(--bg-body);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.contact-item:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow);
+}
+
+.contact-item i {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.contact-item h3 {
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+    font-size: 1.3rem;
+}
+
+.contact-item a,
+.contact-item p {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: var(--transition);
+}
+
+.contact-item a:hover {
+    color: var(--primary);
+}
+
+/* ======================== */
+/* 12. FOOTER              */
+/* ======================== */
+.main-footer {
+    background: linear-gradient(160deg, #0A1628 0%, #1A3A6B 100%);
+    color: #ffffff;
+    padding: 3rem 0;
+    text-align: center;
+    position: relative;
+    border-top: 3px solid #D4AF37;
+}
+
+.main-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #D4AF37, #2563EB, #D4AF37);
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.footer-content p {
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.license-text {
+    font-family: 'Courier New', Courier, monospace;
+    color: #ffd700;
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 1rem;
+    opacity: 0.7;
+}
+
+/* ======================== */
+/* 13. TEMA TOGGLESI       */
+/* ======================== */
+.theme-toggle {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #1A3A6B, #2563EB);
+    color: white;
+    border: 2px solid rgba(212,175,55,0.4);
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(37,99,235,0.3);
+    z-index: 1000;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    background: linear-gradient(135deg, #D4AF37, #F0D060);
+    color: #0A1628;
+    border-color: #D4AF37;
+    box-shadow: 0 8px 24px rgba(212,175,55,0.4);
+    transform: scale(1.1) rotate(10deg);
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* ======================== */
+/* 14. ANIMATSIYALAR       */
+/* ======================== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }
+
+/* ======================== */
+/* 15. SCROLLBAR           */
+/* ======================== */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-body);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #1A3A6B, #2563EB);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #D4AF37, #F0D060);
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #1a202c;
+}
+
+/* ============================== */
+/* 16. RESPONSIVLIK (ALOHIDA)     */
+/* ============================== */
+
+/* Tablet uchun (768px dan kichik) */
+@media (max-width: 768px) {
+    /* Navbar uchun padding kamaytirish */
+    nav {
+        padding: 0 1.5rem;
+    }
+    
+    /* Logo qismi - ikki yonidan joy qo'shish */
+    .logo {
+        gap: 12px;
+        padding: 0.3rem 0;
+    }
+    
+    .logo img {
+        height: 45px;
+    }
+    
+    .logo-text h1 {
+        font-size: 1.2rem;
+    }
+    
+    .logo-text p {
+        font-size: 0.7rem;
+    }
+    
+    /* Desktop navigatsiyani yashirish */
+    .nav-links {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 80%;
+        max-width: 400px;
+        height: 100vh;
+        background: var(--bg-card);
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        padding: 80px 2rem 2rem;
+        gap: 0;
+        transition: right 0.4s ease;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+    }
+    
+    .nav-links.active {
+        right: 0;
+    }
+    
+    .nav-links li {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .nav-links a {
+        display: block;
+        padding: 1rem 1.5rem;
+        margin: 0.5rem 0;
+        border-radius: 12px;
+        width: 100%;
+        font-size: 1rem;
+    }
+    
+    .nav-links a:hover::after {
+        display: none;
+    }
+    
+    /* Kirish tugmasi devordan joy olsin */
+    .btn-login {
+        margin: 1rem 0 0 0;
+        width: 100%;
+        text-align: center;
+        padding: 1rem !important;
+    }
+    
+    /* Hamburger menyuni ko'rsatish */
+    .hamburger {
+        display: flex;
+    }
+    
+    /* Hamburger animatsiyasi */
+    .hamburger.active span:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+    }
+    
+    .hamburger.active span:nth-child(2) {
+        opacity: 0;
+    }
+    
+    .hamburger.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+    }
+    
+    /* Hero section */
+    .hero {
+        padding: 4rem 1rem;
+    }
+    
+    .hero h2 {
+        font-size: 2.2rem;
+        padding: 0 1rem;
+    }
+    
+    .hero p {
+        font-size: 1.1rem;
+        padding: 0 1rem;
+    }
+    
+    /* Stats section */
+    .stats-container {
+        padding: 0 1rem;
+    }
+    
+    .stats-bar {
+        padding: 2rem 1.5rem;
+        gap: 1.5rem;
+        margin: 0 1rem;
+    }
+    
+    .stat-item {
+        min-width: 120px;
+    }
+    
+    .stat-item h3 {
+        font-size: 2rem;
+    }
+    
+    /* Umumiy sectionlar */
+    .section {
+        padding: 3rem 1.5rem;
+    }
+    
+    .section-header h2 {
+        font-size: 2rem;
+    }
+    
+    /* Kartalar */
+    .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .card {
+        padding: 2rem 1.5rem;
+    }
+    
+    /* Galereya */
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    
+    .gallery-item {
+        height: 200px;
+    }
+    
+    /* Kontakt bo'limi */
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Tema tugmasi */
+    .theme-toggle {
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}
+
+/* Kichik telefonlar uchun (480px dan kichik) */
+@media (max-width: 480px) {
+    /* Navbar */
+    nav {
+        padding: 0 1rem;
+    }
+    
+    .logo img {
+        height: 40px;
+    }
+    
+    .logo-text h1 {
+        font-size: 1.1rem;
+    }
+    
+    /* Hero */
+    .hero {
+        padding: 3rem 1rem;
+    }
+    
+    .hero h2 {
+        font-size: 1.8rem;
+    }
+    
+    .hero-btns {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 300px;
+        text-align: center;
+        padding: 0.9rem 2rem;
+    }
+    
+    /* Stats */
+    .stats-bar {
+        flex-direction: column;
+        padding: 1.5rem;
+    }
+    
+    .stat-item {
+        min-width: 100%;
+    }
+    
+    .stat-item h3 {
+        font-size: 2.2rem;
+    }
+    
+    /* Sectionlar */
+    .section-header h2 {
+        font-size: 1.8rem;
+    }
+    
+    /* Timeline */
+    .timeline-item {
+        padding: 1.5rem;
+    }
+    
+    .month {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Footer */
+    .footer-content {
+        padding: 0 1rem;
+    }
+    
+    .footer-content p {
+        font-size: 0.8rem;
+    }
+    
+    .license-text {
+        font-size: 0.7rem !important;
+    }
+}
+
+/* Juda kichik ekranlar uchun (360px dan kichik) */
+@media (max-width: 360px) {
+    /* Logo */
+    .logo img {
+        height: 35px;
+    }
+    
+    .logo-text h1 {
+        font-size: 1rem;
+    }
+    
+    /* Hero */
+    .hero h2 {
+        font-size: 1.5rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+    
+    /* Sectionlar */
+    .section {
+        padding: 2rem 1rem;
+    }
+    
+    .section-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .section-header p {
+        font-size: 1rem;
+    }
+    
+    /* Kartalar */
+    .card {
+        padding: 1.5rem 1rem;
+    }
+    
+    .card-icon {
+        font-size: 2rem;
+        height: 50px;
+    }
+    
+    .card h3 {
+        font-size: 1.3rem;
+    }
+}
+
+/* ==================== */
+/* LOGIN SAHIFASI UCHUN */
+/* ==================== */
+
+/* Tema tugmasi */
+.theme-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: var(--box-shadow);
+}
+
+/* Kartochkalar (login page) */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--box-shadow);
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card i {
+    font-size: 2.5rem;
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+.card h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+/* Faoliyatlar (dashboard uchun) */
+.dark-section {
+    background: var(--light-color);
+    padding: 3rem;
+    border-radius: var(--border-radius);
+}
+
+.activities {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.activity {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.activity h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.activity i {
+    color: var(--secondary-color);
+    margin-right: 0.5rem;
+}
+
+/* Reyting tizimi (dashboard uchun) */
+.rating-system {
+    background: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.criteria {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.criterion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.criterion-name {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.stars {
+    color: #fbbf24;
+    margin-bottom: 0.5rem;
+}
+
+.criterion-value {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.total-rating {
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--light-color);
+    border-radius: var(--border-radius);
+}
+
+.warning {
+    color: #dc2626;
+    margin-top: 1rem;
+    font-weight: bold;
+}
+
+.warning i {
+    margin-right: 0.5rem;
+}
+
+/* ==================== */
+/* ADMIN SAHIFASI UCHUN */
+/* ==================== */
+
+body.dark-mode .dashboard-header {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af);
+}
+
+body.dark-mode .admin-header {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af);
+}
+
+body.dark-mode .stat-card.system {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+
+body.dark-mode .report-form,
+body.dark-mode .profile-sidebar,
+body.dark-mode .profile-main,
+body.dark-mode .admin-sidebar,
+body.dark-mode .admin-main {
+    background: #374151;
+    border-color: var(--border-color);
+}
+
+/* Form elementlari */
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background: #4b5563;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+    border-color: var(--secondary-color);
+    background: #4b5563;
+}
+
+/* Admin tugmalari */
+body.dark-mode .btn-submit,
+body.dark-mode .btn-draft {
+    background: #6b7280;
+    color: white;
+}
+
+body.dark-mode .btn-refresh {
+    background: #3b82f6;
+    color: white;
+}
+
+body.dark-mode .btn-save {
+    background: #10b981;
+    color: white;
+}
+
+body.dark-mode .btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+/* Jadvalar */
+body.dark-mode table {
+    color: var(--text-color);
+}
+
+body.dark-mode th {
+    background: #374151;
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode td {
+    background: #1f2937;
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode tr:hover {
+    background: #374151;
+}
+
+/* Progress bar */
+body.dark-mode .progress-bar {
+    background: #4b5563;
+}
+
+body.dark-mode .progress-fill {
+    background: var(--secondary-color);
+}
+
+/* Alert va xabarlar */
+body.dark-mode .alert-success {
+    background: #064e3b;
+    color: #a7f3d0;
+    border-color: #047857;
+}
+
+body.dark-mode .alert-danger {
+    background: #7f1d1d;
+    color: #fecaca;
+    border-color: #991b1b;
+}
+
+/* ======================= */
+/* DEBUGGER SAHIFASI UCHUN */
+/* ======================= */
+
+body.dark-mode .debugger-header {
+    background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+}
+
+body.dark-mode .debugger-content {
+    background: #374151;
+    border-color: var(--border-color);
+}
+
+body.dark-mode .console-output {
+    background: #111827;
+    color: #10b981;
+}
+
+/* ======================= */
+/* UMUMIY (barcha sahifalar uchun) */
+/* ======================= */
+
+/* Scrollbar tungi rejimda */
+body.dark-mode ::-webkit-scrollbar {
+    width: 10px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #374151;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 5px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Placeholder */
+body.dark-mode ::placeholder {
+    color: #9ca3af;
+}
+
+/* Yulduzcha reyting */
+body.dark-mode .star {
+    color: #6b7280;
+}
+
+body.dark-mode .star.active {
+    color: #fbbf24;
+}
+
+

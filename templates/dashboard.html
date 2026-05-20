@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ============ ASOSIY O'ZGARUVCHILAR ============ */
+        :root {
+            --primary-color: #3b82f6;
+            --secondary-color: #6366f1;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --text-color: #1f2937;
+            --text-light: #6b7280;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        /* Dark mode o'zgaruvchilari */
+        body.dark-mode {
+            --bg-color: #111827;
+            --card-bg: #1f2937;
+            --text-color: #f3f4f6;
+            --text-light: #9ca3af;
+            --border-color: #374151;
+        }
+        
+        /* ============ UMUMIY STILLAR ============ */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            color: var(--text-color);
+        }
+        
+        /* ============ HEADER ============ */
+        .dashboard-header {
+            background: linear-gradient(135deg, #0A1628 0%, #1A3A6B 60%, #1E4D9B 100%);
+            border-bottom: 3px solid #D4AF37;
+            color: white;
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(10,22,40,0.35);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .header-left h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .header-left p {
+            margin: 0.25rem 0 0;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .header-left p {
+                display: block;
+            }
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            backdrop-filter: blur(4px);
+        }
+        
+        .user-details {
+            text-align: right;
+        }
+        
+        .user-details h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .user-details p {
+            margin: 0.1rem 0 0;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 640px) {
+            .user-details {
+                display: none;
+            }
+        }
+        
+        
+        /* ============ DASHBOARD LAYOUT ============ */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 73px);
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            width: 280px;
+            background: var(--card-bg);
+            position: fixed;
+            top: 73px;
+            left: 0;
+            bottom: 0;
+            z-index: 99;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            padding: 1.5rem 1rem;
+            border-right: 1px solid var(--border-color, #e5e7eb);
+        }
+        
+        body.dark-mode .sidebar {
+            border-right-color: #374151;
+        }
+        
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+        
+        @media (min-width: 1025px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                left: calc((100% - 1400px) / 2);
+            }
+            .mobile-menu-btn {
+                display: none !important;
+            }
+        }
+        
+        .sidebar-nav {
+            list-style: none;
+            margin: 1rem 0 0;
+            padding: 0;
+        }
+        
+        .sidebar-nav li {
+            margin-bottom: 0.35rem;
+        }
+        
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.8rem 1.2rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            font-weight: 500;
+            min-height: 48px;
+            font-size: 0.98rem;
+        }
+        
+        .sidebar-nav a:hover {
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--secondary-color);
+        }
+        
+        body.dark-mode .sidebar-nav a:hover {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+        }
+        
+        .sidebar-nav a.active {
+            background: var(--secondary-color);
+            color: white;
+        }
+        
+        .sidebar-nav a i {
+            width: 24px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+        
+        .logout-btn {
+            margin-top: 2.5rem;
+            width: 100%;
+            padding: 0.85rem;
+            background: transparent;
+            border: 1.5px solid var(--border-color, #e5e7eb);
+            color: var(--danger-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            font-weight: 600;
+            transition: var(--transition);
+            min-height: 48px;
+            font-size: 0.98rem;
+        }
+        
+        body.dark-mode .logout-btn {
+            border-color: #4b5563;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.05);
+            border-color: var(--danger-color);
+        }
+        
+        /* ============ MAIN CONTENT ============ */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            transition: margin-left 0.3s ease;
+            width: 100%;
+        }
+        
+        @media (min-width: 1025px) {
+            .main-content {
+                margin-left: 280px;
+                width: calc(100% - 280px);
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+        
+        /* ============ MOBILE OVERLAY ============ */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 73px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 98;
+            backdrop-filter: blur(4px);
+        }
+        
+        .mobile-overlay.active {
+            display: block;
+        }
+        
+        /* ============ STATS CARDS ============ */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.35rem 1.25rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: left;
+            transition: var(--transition);
+            border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+            display: flex;
+            flex-direction: column;
+        }
+        
+        body.dark-mode .stat-card {
+            border-color: #374151;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+            border-color: var(--secondary-color);
+        }
+        
+        .stat-card h3 {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .stat-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0.25rem 0;
+            line-height: 1;
+        }
+        
+        .stat-card p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+        
+        /* ============ RATING DISPLAY ============ */
+        .rating-display {
+            background: var(--card-bg);
+            padding: 1.75rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+        }
+        
+        .rating-display h2 {
+            margin: 0 0 1rem;
+            color: var(--text-color);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .rating-score {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            color: var(--primary-color);
+            margin: 0.5rem 0;
+            line-height: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .rating-score {
+                font-size: 2.5rem;
+            }
+        }
+        
+        /* ============ PROGRESS BAR ============ */
+        .rating-bar-container {
+            background: #e5e7eb;
+            height: 22px;
+            border-radius: 30px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        body.dark-mode .rating-bar-container {
+            background: #374151;
+        }
+        
+        .rating-progress {
+            height: 100%;
+            border-radius: 30px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+        
+        .rating-excess {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            width: 0;
+            height: 100%;
+            background: var(--danger-color);
+            border-radius: 0 30px 30px 0;
+            z-index: 1;
+            transition: width 0.5s ease, left 0.5s ease;
+        }
+        
+        .rating-bar-marker {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: rgba(255,255,255,0.3);
+            z-index: 2;
+        }
+        
+        .rating-bar-marker:nth-child(1) { left: 20%; }
+        .rating-bar-marker:nth-child(2) { left: 40%; }
+        .rating-bar-marker:nth-child(3) { left: 60%; }
+        .rating-bar-marker:nth-child(4) { left: 80%; }
+        .rating-bar-marker:nth-child(5) { left: 100%; }
+        
+        .rating-warning {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            color: #92400e;
+            padding: 1rem 1.25rem;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+        }
+        
+        body.dark-mode .rating-warning {
+            background: #854d0e;
+            color: #fef9c3;
+            border-color: #f59e0b;
+        }
+        
+        .rating-success {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+            padding: 1rem 1.25rem;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+        }
+        
+        body.dark-mode .rating-success {
+            background: #064e3b;
+            color: #a7f3d0;
+            border-color: #10b981;
+        }
+        
+        /* ============ RECENT SECTIONS ============ */
+        .recent-reports,
+        .tasks-list {
+            background: var(--card-bg);
+            padding: 1.75rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color, rgba(0,0,0,0.05));
+        }
+        
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #f1f5f9;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        body.dark-mode .section-title {
+            border-bottom-color: #374151;
+        }
+        
+        .section-title h2 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        
+        .btn-new {
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.6rem 1.35rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            white-space: nowrap;
+            border: none;
+        }
+        
+        .btn-new:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        
+        .report-item,
+        .task-item {
+            padding: 1.25rem;
+            border: 1px solid #e5e7eb;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            transition: var(--transition);
+            background: var(--card-bg);
+        }
+        
+        body.dark-mode .report-item,
+        body.dark-mode .task-item {
+            border-color: #374151;
+        }
+        
+        .report-item:hover,
+        .task-item:hover {
+            border-color: var(--secondary-color);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+            transform: translateY(-2px);
+        }
+        
+        .report-header,
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .report-header h3,
+        .task-header h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        
+        .report-status {
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-rated {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .task-deadline {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.03);
+        }
+        
+        body.dark-mode .task-deadline {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .urgent {
+            color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.1);
+            font-weight: 600;
+        }
+        
+        .warning {
+            color: var(--warning-color);
+            background: rgba(245, 158, 11, 0.1);
+            font-weight: 600;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1.5rem;
+            color: var(--text-light);
+            background: var(--bg-color);
+            border-radius: var(--border-radius);
+            border: 1px dashed var(--border-color, #e5e7eb);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+        
+        /* ============ THEME TOGGLE BUTTON ============ */
+        .theme-toggle-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 54px;
+            height: 54px;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            z-index: 100;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            transition: var(--transition);
+        }
+        
+        .theme-toggle-btn:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .theme-toggle-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.2rem;
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+        
+        /* ============ ANIMATIONS ============ */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stat-card, .rating-display, .report-item, .task-item {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .report-item:nth-child(2) { animation-delay: 0.1s; }
+        .report-item:nth-child(3) { animation-delay: 0.2s; }
+        .task-item:nth-child(2) { animation-delay: 0.1s; }
+        
+        /* ============ RESPONSIVE TWEAKS ============ */
+        @media (max-width: 767px) {
+            .dashboard-header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .header-left h1 {
+                font-size: 1.1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .rating-display,
+            .recent-reports,
+            .tasks-list {
+                padding: 1.25rem;
+            }
+            
+            .rating-score {
+                font-size: 2rem;
+            }
+            
+            .section-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .btn-new {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .report-header,
+            .task-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        
+        @media (max-width: 479px) {
+            .sidebar {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .user-details h3 {
+                max-width: 140px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .rating-warning,
+            .rating-success {
+                flex-direction: column;
+                text-align: center;
+                padding: 1rem;
+            }
+        }
+        
+        @media (hover: none) and (pointer: coarse) {
+            .sidebar-nav a,
+            .btn-new,
+            .logout-btn,
+            .mobile-menu-btn {
+                min-height: 48px;
+            }
+            
+            .theme-toggle-btn {
+                width: 56px;
+                height: 56px;
+            }
+        }
+        
+        /* ============ HEADER - TUZATILGAN ============ */
+            .header-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 1rem;
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .header-left h1 {
+                margin: 0;
+                font-size: 1.35rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .header-left p {
+                margin: 0.25rem 0 0;
+                font-size: 0.85rem;
+                opacity: 0.9;
+            }
+
+            /* Yozuvlarni o'ng tomonga o'tkazish */
+            @media (min-width: 641px) {
+                .header-left {
+                    order: 2;
+                }
+                .user-info {
+                    order: 1;
+                }
+            }
+
+            .user-info {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                flex-direction: row-reverse; /* Avatar va menyu o'rnini almashtirish */
+            }
+
+            /* Mobile menu button - avatar yonida */
+            .mobile-menu-btn {
+                display: none;
+                background: transparent;
+                border: none;
+                color: white;
+                font-size: 1.2rem;
+                cursor: pointer;
+                padding: 0.5rem;
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+                transition: background 0.2s;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .mobile-menu-btn:hover {
+                background: rgba(255,255,255,0.15);
+            }
+
+            /* Mobile va tabletlarda ko'rsat */
+            @media (max-width: 1024px) {
+                .mobile-menu-btn {
+                    display: flex !important;
+                }
+            }
+
+            .user-avatar {
+                width: 42px;
+                height: 42px;
+                background: rgba(255,255,255,0.2);
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 1.1rem;
+                flex-shrink: 0;
+                backdrop-filter: blur(4px);
+                margin-right: 0; /* O'ng margin olib tashlandi */
+            }
+
+            .user-details {
+                text-align: left; /* O'ngdan chapga o'zgartirildi */
+            }
+
+            @media (max-width: 640px) {
+                .user-details {
+                    display: none;
+                }
+                .user-info {
+                    gap: 0.5rem;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .mobile-menu-btn {
+                    width: 36px;
+                    height: 36px;
+                    font-size: 1.1rem;
+                }
+                .user-avatar {
+                    width: 38px;
+                    height: 38px;
+                }
+            }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Tugmasi
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <i class="fas fa-bars"></i>
+    </button> -->
+    
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span class="brand-text">Dashboard</span>
+                </h1>
+                <p>Yoshlar Parlamenti</p>
+            </div>
+            
+            <div class="user-info">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="user-avatar" id="userAvatar">
+                    {{ full_name[0] if full_name else 'U' }}
+                </div>
+                <div class="user-details">
+                    <h3 id="fullNameHeader">{{ full_name if full_name else 'Foydalanuvchi' }}</h3>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <!-- Yon Panel -->
+        <aside class="sidebar hidden" id="sidebar">
+            <nav>
+                <ul class="sidebar-nav">
+                    <li><a href="/dashboard" class="active"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+                    <li><a href="/submit_report"><i class="fas fa-file-upload"></i> Hisobot topshirish</a></li>
+                    <li><a href="/reports_history"><i class="fas fa-clock-rotate-left"></i> Hisobotlar tarixi</a></li>
+                    <li><a href="/user_tasks"><i class="fas fa-list-check"></i> Topshiriqlar</a></li>
+                    <li><a href="/rating_statistics"><i class="fas fa-trophy"></i> Reyting statistikasi</a></li>
+                    <li><a href="/profile"><i class="fas fa-user-cog"></i> Profil</a></li>
+                    <li><a href="/help"><i class="fas fa-circle-question"></i> Yordam</a></li>
+                </ul>
+            </nav>
+            
+            <button class="logout-btn" onclick="window.location.href='/logout'">
+                <i class="fas fa-sign-out-alt"></i> Chiqish
+            </button>
+        </aside>
+
+        <!-- Asosiy Kontent -->
+        <main class="main-content">
+            <!-- Statistik Kartalar - dinamik to'ldiriladi -->
+            <div class="stats-cards" id="statsCards">
+                <div class="stat-card">
+                    <h3>Joriy reyting</h3>
+                    <div class="value" id="statRating">{{ rating if rating else 0 }}/20</div>
+                    <p>Oxirgi baholangan</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Topshirilgan hisobotlar</h3>
+                    <div class="value" id="statReports">{{ reports|length if reports else 0 }}</div>
+                    <p>Umumiy soni</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Baholangan hisobotlar</h3>
+                    <div class="value" id="statRated">
+                        {{ reports|selectattr("status", "equalto", "rated")|list|length if reports else 0 }}
+                    </div>
+                    <p>Baholanganlar</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Faol topshiriqlar</h3>
+                    <div class="value" id="statTasks">{{ tasks|length if tasks else 0 }}</div>
+                    <p>Bajarilmagan</p>
+                </div>
+            </div>
+
+            <!-- Reyting Ko'rsatkichi -->
+            <div class="rating-display">
+                <h2><i class="fas fa-star"></i> Sizning reytingingiz</h2>
+                <div class="rating-score" id="ratingScore">{{ rating if rating else 0 }}/20</div>
+                
+                <div class="rating-bar-container">
+                    <div class="rating-bar-marker"></div>
+                    <div class="rating-bar-marker"></div>
+                    <div class="rating-bar-marker"></div>
+                    <div class="rating-bar-marker"></div>
+                    <div class="rating-bar-marker"></div>
+                    
+                    <div class="rating-progress" id="mainProgress"></div>
+                    <div class="rating-excess" id="excessProgress"></div>
+                </div>
+                
+                <div id="ratingMessage"></div>
+            </div>
+
+            <!-- So'nggi Hisobotlar - dinamik to'ldiriladi -->
+            <div class="recent-reports">
+                <div class="section-title">
+                    <h2><i class="fas fa-file-alt"></i> So'nggi hisobotlar</h2>
+                    <a href="/submit_report" class="btn-new">
+                        <i class="fas fa-plus"></i> Yangi hisobot
+                    </a>
+                </div>
+                
+                <div id="reportsContainer">
+                    <!-- Dinamik to'ldiriladi -->
+                </div>
+            </div>
+
+            <!-- Topshiriqlar - dinamik to'ldiriladi -->
+            <div class="tasks-list">
+                <div class="section-title">
+                    <h2><i class="fas fa-tasks"></i> Faol topshiriqlar</h2>
+                    <a href="/user_tasks" class="btn-new">
+                        <i class="fas fa-arrow-right"></i> Barchasini ko'rish
+                    </a>
+                </div>
+                
+                <div id="tasksContainer">
+                    <!-- Dinamik to'ldiriladi -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Tungi/Kunduz rejim tugmasi -->
+    <button class="theme-toggle-btn" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <script>
+        // ============ 1. REAL MA'LUMOTLARNI YUKLASH ============
+        async function loadDashboardData() {
+            try {
+                // API so'rovlari
+                const [statsRes, reportsRes, tasksRes] = await Promise.all([
+                    fetch('/api/dashboard/stats'),
+                    fetch('/api/user/reports_history'),
+                    fetch('/api/user/tasks')
+                ]);
+
+                const stats = await statsRes.json();
+                const reports = await reportsRes.json();
+                const tasks = await tasksRes.json();
+
+                // ---------- STATISTIKA ----------
+                if (stats.success) {
+                    const s = stats.stats || {};
+                    document.getElementById('statRating').innerHTML = `${s.current_rating || 0}/20`;
+                    document.getElementById('statReports').innerText = s.total_reports || 0;
+                    document.getElementById('statRated').innerText = s.rated_reports || 0;
+                    document.getElementById('statTasks').innerText = s.active_tasks || 0;
+                    
+                    // Reyting paneli
+                    const rating = s.current_rating || 0;
+                    const ratingEl = document.getElementById('ratingScore');
+                    if (ratingEl) ratingEl.innerHTML = `${rating}/20`;
+                    
+                    // Progress bar yangilash
+                    updateProgressBar(rating);
+                    
+                    // Reyting xabari
+                    updateRatingMessage(rating);
+                }
+
+                // ---------- HISOBOTLAR ----------
+                const reportsContainer = document.getElementById('reportsContainer');
+                if (reports.success && reports.reports && reports.reports.length > 0) {
+                    const lastThree = reports.reports.slice(0, 3);
+                    reportsContainer.innerHTML = lastThree.map(r => `
+                        <div class="report-item">
+                            <div class="report-header">
+                                <h3>${r.month_year || 'Hisobot'}</h3>
+                                <span class="report-status status-${r.status || 'pending'}">
+                                    ${r.status === 'pending' ? '<i class="fas fa-clock"></i> Kutilmoqda' : 
+                                      r.status === 'rated' ? '<i class="fas fa-check"></i> Baholangan' : 
+                                      '<i class="fas fa-times"></i> Rad etilgan'}
+                                </span>
+                            </div>
+                            <p style="font-size: 0.95rem; color: var(--text-light); margin-bottom: 0.5rem;">
+                                <i class="fas fa-calendar-alt"></i> Tadbirlar: ${r.event_count || 0} | 
+                                <i class="fas fa-file"></i> Materiallar: ${r.material_count || 0}
+                            </p>
+                            <div class="report-meta" style="display: flex; gap: 1.5rem; margin-top: 0.5rem; color: var(--text-light); font-size: 0.85rem;">
+                                <span><i class="far fa-calendar"></i> ${r.submitted_date?.slice(0, 10) || ''}</span>
+                                ${r.total ? `<span><i class="fas fa-star" style="color: var(--warning-color);"></i> Ball: ${r.total}</span>` : ''}
+                            </div>
+                            ${r.admin_comment ? `
+                            <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: 10px; font-size: 0.9rem; border-left: 4px solid var(--primary-color);">
+                                <i class="fas fa-quote-left" style="color: var(--primary-color); opacity: 0.7;"></i> 
+                                <strong>Admin:</strong> ${r.admin_comment}
+                            </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                    
+                    if (reports.reports.length > 3) {
+                        reportsContainer.innerHTML += `
+                            <div style="text-align: center; margin-top: 1.25rem;">
+                                <a href="/reports_history" style="color: var(--secondary-color); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-arrow-right"></i> Barcha hisobotlarni ko'rish (${reports.reports.length})
+                                </a>
+                            </div>
+                        `;
+                    }
+                } else {
+                    reportsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-file-alt"></i>
+                            <h3>Hali hisobot topshirmagansiz</h3>
+                            <p>Birinchi hisobotingizni topshirish uchun "Yangi hisobot" tugmasini bosing</p>
+                        </div>
+                    `;
+                }
+
+                // ---------- TOPSHIRIQLAR ----------
+                const tasksContainer = document.getElementById('tasksContainer');
+                if (tasks.success && tasks.tasks && tasks.tasks.length > 0) {
+                    const activeTasks = tasks.tasks.filter(t => t.status !== 'completed').slice(0, 2);
+                    
+                    if (activeTasks.length > 0) {
+                        tasksContainer.innerHTML = activeTasks.map(t => {
+                            const deadline = t.deadline ? new Date(t.deadline) : null;
+                            const today = new Date();
+                            const daysLeft = deadline ? Math.ceil((deadline - today) / (1000 * 60 * 60 * 24)) : null;
+                            
+                            let badgeClass = '';
+                            let badgeText = '';
+                            
+                            if (!deadline) { 
+                                badgeClass = 'status-pending'; 
+                                badgeText = 'Muddat yo\'q'; 
+                            } else if (daysLeft < 0) { 
+                                badgeClass = 'status-rejected'; 
+                                badgeText = 'Muddat oʻtgan'; 
+                            } else if (daysLeft === 0) { 
+                                badgeClass = 'status-pending'; 
+                                badgeText = 'Bugun'; 
+                            } else if (daysLeft <= 2) { 
+                                badgeClass = 'status-pending'; 
+                                badgeText = `${daysLeft} kun qoldi`; 
+                            } else { 
+                                badgeClass = 'status-rated'; 
+                                badgeText = `${daysLeft} kun`; 
+                            }
+
+                            return `
+                                <div class="task-item" style="cursor: pointer;" onclick="viewTask('${t.task_id}')">
+                                    <div class="task-header">
+                                        <h3>${t.title || 'Topshiriq'}</h3>
+                                        <span class="task-deadline ${badgeClass}">
+                                            <i class="fas fa-calendar-alt"></i> ${badgeText}
+                                        </span>
+                                    </div>
+                                    <p style="font-size: 0.95rem; color: var(--text-light); margin: 0.5rem 0 0.75rem;">
+                                        ${t.description ? (t.description.slice(0, 100) + '...') : 'Tavsif mavjud emas'}
+                                    </p>
+                                    <div style="display: flex; gap: 1.5rem; color: var(--text-light); font-size: 0.85rem;">
+                                        <span><i class="fas fa-flag"></i> ${t.priority || 'oddiy'}</span>
+                                        <span><i class="fas fa-coins"></i> ${t.points || 0} ball</span>
+                                        <span><i class="fas fa-user-tie"></i> ${t.admin_name || 'Admin'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        if (tasks.tasks.filter(t => t.status !== 'completed').length > 2) {
+                            tasksContainer.innerHTML += `
+                                <div style="text-align: center; margin-top: 1.25rem;">
+                                    <a href="/user_tasks" style="color: var(--secondary-color); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                        <i class="fas fa-arrow-right"></i> Barcha topshiriqlarni ko'rish
+                                    </a>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        tasksContainer.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fas fa-check-circle"></i>
+                                <h3>Faol topshiriq yo'q</h3>
+                                <p>Barcha topshiriqlar bajarilgan</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    tasksContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-tasks"></i>
+                            <h3>Hozircha topshiriq yo'q</h3>
+                            <p>Yangi topshiriqlar paydo bo'lganda ko'rinadi</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Dashboard yuklashda xatolik:', error);
+                // Fallback - template ma'lumotlari
+            }
+        }
+
+        // ============ 2. PROGRESS BAR ============
+        function updateProgressBar(rating) {
+            const maxRating = 20;
+            const mainProgress = document.getElementById('mainProgress');
+            const excessProgress = document.getElementById('excessProgress');
+            
+            if (!mainProgress || !excessProgress) return;
+            
+            let mainWidth = 0;
+            let excessWidth = 0;
+            
+            if (rating <= maxRating) {
+                mainWidth = (rating / maxRating) * 100;
+                excessWidth = 0;
+                
+                // Rangni aniqlash
+                if (rating >= 16) {
+                    mainProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                } else if (rating >= 13) {
+                    mainProgress.style.background = 'linear-gradient(90deg, #3b82f6, #2563eb)';
+                } else if (rating >= 10) {
+                    mainProgress.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+                } else if (rating >= 7) {
+                    mainProgress.style.background = 'linear-gradient(90deg, #f97316, #ea580c)';
+                } else {
+                    mainProgress.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                }
+            } else {
+                mainWidth = 100;
+                const excessRating = rating - maxRating;
+                excessWidth = Math.min((excessRating / 7) * 35, 35);
+                
+                mainProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                excessProgress.style.background = 'var(--danger-color)';
+            }
+            
+            mainProgress.style.width = `${mainWidth}%`;
+            excessProgress.style.width = `${excessWidth}%`;
+            excessProgress.style.left = `${mainWidth}%`;
+        }
+
+        // ============ 3. REYTING XABARI ============
+        function updateRatingMessage(rating) {
+            const messageContainer = document.getElementById('ratingMessage');
+            if (!messageContainer) return;
+            
+            if (rating < 15) {
+                messageContainer.innerHTML = `
+                    <div class="rating-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>Diqqat!</strong> Sizning reytingingiz 15 balldan past. 
+                            Agar bu holat davom etsa, keyingi saylovda nomzod bo'lish huquqiga ega bo'lmaysiz.
+                        </div>
+                    </div>
+                `;
+            } else if (rating > 20) {
+                messageContainer.innerHTML = `
+                    <div class="rating-success" style="background: #fee2e2; border-color: #ef4444; color: #991b1b;">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Eslatma:</strong> Sizning reytingingiz maksimal 20 balldan oshib ketdi.
+                            Bu yaxshi natija, lekin faqat 20 ball reytingga hisoblanadi.
+                        </div>
+                    </div>
+                `;
+            } else {
+                messageContainer.innerHTML = `
+                    <div class="rating-success">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>Ajoyib!</strong> Sizning reytingingiz yaxshi holatda.
+                            Davom eting va yanada yuqori natijalarga erishing!
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ============ 4. MOBILE MENU ============
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        const sidebar = document.getElementById('sidebar');
+        
+        function toggleMobileMenu() {
+            sidebar.classList.toggle('hidden');
+            mobileOverlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('hidden') ? '' : 'hidden';
+        }
+        
+        function closeMobileMenu() {
+            if (window.innerWidth <= 1024) {
+                sidebar.classList.add('hidden');
+                mobileOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+        }
+        
+        if (mobileOverlay) {
+            mobileOverlay.addEventListener('click', closeMobileMenu);
+        }
+        
+        // Sidebar linklari
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 1024) {
+                        e.preventDefault();
+                        const href = this.getAttribute('href');
+                        closeMobileMenu();
+                        setTimeout(() => {
+                            window.location.href = href;
+                        }, 300);
+                    }
+                });
+            });
+            
+            // ESC tugmasi
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !sidebar.classList.contains('hidden')) {
+                    closeMobileMenu();
+                }
+            });
+            
+            // Resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 1024) {
+                    sidebar.classList.remove('hidden');
+                    mobileOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                } else {
+                    if (!sidebar.classList.contains('hidden')) {
+                        sidebar.classList.add('hidden');
+                    }
+                }
+            });
+            
+            if (window.innerWidth <= 1024) {
+                sidebar.classList.add('hidden');
+            }
+        });
+
+        // ============ 5. DARK/LIGHT THEME ============
+        const themeToggle = document.getElementById('themeToggle');
+        
+        function getTheme() {
+            return localStorage.getItem('theme') || 'light';
+        }
+        
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                if (themeToggle) {
+                    const icon = themeToggle.querySelector('i');
+                    icon.className = 'fas fa-sun';
+                }
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-mode');
+                if (themeToggle) {
+                    const icon = themeToggle.querySelector('i');
+                    icon.className = 'fas fa-moon';
+                }
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        function toggleTheme() {
+            const currentTheme = getTheme();
+            setTheme(currentTheme === 'light' ? 'dark' : 'light');
+        }
+        
+        // Tema yuklash
+        const savedTheme = getTheme();
+        setTheme(savedTheme);
+        
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+
+        // ============ 6. TASK VIEW MODAL ============
+        async function viewTask(taskId) {
+            try {
+                const response = await fetch(`/api/user/get_task/${taskId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showTaskModal(data.task);
+                } else {
+                    alert('Xatolik: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Topshiriqni ko\'rishda xatolik:', error);
+                alert('Topshiriqni ko\'rishda xatolik yuz berdi.');
+            }
+        }
+        
+        function showTaskModal(task) {
+            const modal = document.createElement('div');
+            modal.id = 'task-view-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            `;
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                border-radius: 12px;
+                max-width: 700px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                position: relative;
+            `;
+            
+            const deadline = task.deadline ? new Date(task.deadline) : null;
+            const today = new Date();
+            const daysLeft = deadline ? Math.ceil((deadline - today) / (1000 * 60 * 60 * 24)) : null;
+            
+            let html = `
+                <div style="padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="color: var(--primary-color); margin: 0;">${task.title}</h2>
+                        <button id="close-task-modal" 
+                                style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px;">✕</button>
+                    </div>
+                    
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0; color: var(--secondary-color);">Tavsif</h4>
+                        <p style="margin: 0; max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;">${task.description || 'Tavsif yo\'q'}</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--secondary-color);">Umumiy ma'lumotlar</h4>
+                            <div style="font-size: 0.9rem;">
+                                <div><strong>Bergan:</strong> ${task.admin_name || 'Admin'}</div>
+                                <div><strong>Holat:</strong> ${task.status || 'pending'}</div>
+                                <div><strong>Ball:</strong> ${task.points || 5}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--secondary-color);">Muddat</h4>
+                            <div style="font-size: 0.9rem;">
+                                <div><strong>Muddati:</strong> ${deadline ? deadline.toLocaleDateString('uz-UZ') : 'Muddat yo\'q'}</div>
+                                ${daysLeft !== null ? `<div><strong>Qolgan kunlar:</strong> ${daysLeft}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+            `;
+            
+            if (task.file_path) {
+                html += `
+                    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0; color: var(--secondary-color);">Yuklangan hujjat</h4>
+                        <div id="task-file-preview-${task.task_id}" style="margin-bottom: 10px;"></div>
+                        <a href="/download/${task.file_path.split('/').pop()}" download="${task.file_path.split('/').pop()}"
+                           style="display: inline-block; padding: 10px 20px; background: var(--primary-color); color: white; text-decoration: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-download"></i> Faylni yuklab olish
+                        </a>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div style="text-align: right; margin-top: 20px;">
+                        <button id="close-task-modal-btn"
+                                style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Yopish
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modalContent.innerHTML = html;
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Close button handlers
+            document.getElementById('close-task-modal').onclick = function() {
+                document.getElementById('task-view-modal').remove();
+            };
+            document.getElementById('close-task-modal-btn').onclick = function() {
+                document.getElementById('task-view-modal').remove();
+            };
+            
+            // Close on background click
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+            
+            // File preview
+            if (task.file_path) {
+                const filePath = task.file_path;
+                const fileName = filePath.split('/').pop();
+                const fileExt = fileName.split('.').pop().toLowerCase();
+                const previewContainer = document.getElementById(`task-file-preview-${task.task_id}`);
+                
+                if (previewContainer) {
+                    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+                        previewContainer.innerHTML = `<img src="/download/${fileName}" style="max-width: 100%; max-height: 400px; border-radius: 8px; border: 1px solid #ddd;" alt="Preview">`;
+                    } else if (fileExt === 'pdf') {
+                        previewContainer.innerHTML = `<embed src="/download/${fileName}" type="application/pdf" width="100%" height="400px" style="border-radius: 8px; border: 1px solid #ddd;">`;
+                    } else {
+                        previewContainer.innerHTML = `<p style="color: #6b7280; font-size: 0.9rem;"><i class="fas fa-file"></i> Fayl turi: ${fileExt.toUpperCase()}</p>`;
+                    }
+                }
+            }
+        }
+
+        // ============ 7. INIT ============
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dastlabki progress barni hisoblash
+            const initialRating = parseFloat('{{ rating if rating else 0 }}');
+            updateProgressBar(initialRating);
+            
+            // Real ma'lumotlarni yuklash
+            loadDashboardData();
+            
+            // Har 30 sekundda yangilash
+            setInterval(loadDashboardData, 30000);
+        });
+    </script>
+</body>
+</html>

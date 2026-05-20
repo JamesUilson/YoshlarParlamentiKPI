@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ==================== */
+        /* LOGIN PAGE STYLES */
+        /* ==================== */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'DM Sans', 'Segoe UI', Tahoma, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color, #0A1628);
+            background-color: var(--light-color, #F8F5EE);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        :root {
+            --primary-color:   #1A3A6B;
+            --secondary-color: #2563EB;
+            --gold-color:      #D4AF37;
+            --gold-light:      #F0D060;
+            --accent-color:    #5B6A82;
+            --light-color:     #F8F5EE;
+            --dark-color:      #0A1628;
+            --text-color:      #0A1628;
+            --text-light:      #5B6A82;
+            --border-radius:   12px;
+            --box-shadow:      0 4px 20px rgba(10,22,40,0.12);
+            --transition:      all 0.3s ease;
+        }
+        
+        body.dark-mode {
+            --light-color: #0A1628;
+            --dark-color:  #EEF2FF;
+            --text-color:  #EEF2FF;
+            --text-light:  #94A3B8;
+            --box-shadow:  0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        /* Tema tugmasi */
+        .theme-btn {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            z-index: 1000;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+        
+        .theme-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3); background: linear-gradient(135deg, #D4AF37, #F0D060); color: #0A1628;
+        }
+        
+        /* Login container */
+        .login-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Chap qism */
+        .login-left {
+            flex: 1;
+            background: linear-gradient(160deg, #0A1628 0%, #1A3A6B 55%, #1E4D9B 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem;
+            position: relative;
+            overflow: hidden;
+            border-right: 3px solid #D4AF37;
+        }
+        
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(circle at 20% 80%, rgba(212,175,55,0.18) 0%, transparent 45%), radial-gradient(circle at 80% 20%, rgba(96,165,250,0.12) 0%, transparent 40%);
+            background-size: cover;
+        }
+        
+        /* Login logo */
+        .login-logo-main {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            margin-bottom: 2rem;
+        }
+        
+        .logo img {
+            height: 80px;
+            width: auto;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+        
+        .logo-text h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: white;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .logo-text p {
+            font-size: 0.85rem;
+            color: #F0D060;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        /* Login info */
+        .login-info {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(12px);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-top: 2rem;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(212,175,55,0.25);
+            border-left: 3px solid #D4AF37;
+        }
+        
+        .login-info h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.2rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .login-info h2 i {
+            color: #93c5fd;
+        }
+        
+        .login-info p {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+        
+        .login-info ul {
+            margin: 1.2rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        .login-info li {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.8rem;
+            position: relative;
+            padding-left: 0.5rem;
+        }
+        
+        .login-info li::before {
+            content: "✓";
+            color: #34d399;
+            font-weight: bold;
+            position: absolute;
+            left: -1.5rem;
+        }
+        
+        /* Info box */
+        .info-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            border-left: 4px solid #34d399;
+        }
+        
+        .info-box h3 {
+            color: white;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .info-box h3 i {
+            color: #34d399;
+        }
+        
+        .info-box p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .info-box a {
+            color: #93c5fd;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .info-box a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        /* O'ng qism */
+        .login-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem;
+            background: var(--light-color);
+        }
+        
+        /* Login form */
+        .login-form {
+            max-width: 420px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2.5rem;
+            background: var(--light-color);
+            border-radius: 15px;
+            box-shadow: var(--box-shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .form-header h2 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+        }
+        
+        .form-header p {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+        
+        /* Form groups */
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: white;
+            color: var(--text-color);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #1A3A6B, #2563EB);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #D4AF37, #F0D060);
+            color: #0A1628;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(212,175,55,0.4);
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 1rem 1.2rem;
+            border-radius: 8px;
+            margin-bottom: 1.8rem;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert i {
+            font-size: 1.2rem;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        /* Password help */
+        .password-help {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .password-help p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .login-footer p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+        
+        .login-footer a {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        .login-footer a:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+        
+        /* Dark mode adjustments */
+        body.dark-mode .login-form {
+            background: #374151;
+            border-color: #4b5563;
+        }
+        
+        body.dark-mode .form-control {
+            background: #4b5563;
+            border-color: #6b7280;
+            color: white;
+        }
+        
+        body.dark-mode .form-control:focus {
+            border-color: var(--secondary-color);
+            background: #4b5563;
+        }
+        
+        body.dark-mode .form-group label {
+            color: #f9fafb;
+        }
+        
+        body.dark-mode .form-header h2 {
+            color: #93c5fd;
+        }
+        
+        body.dark-mode .form-header p {
+            color: #d1d5db;
+        }
+        
+        body.dark-mode .password-help,
+        body.dark-mode .login-footer {
+            border-color: #4b5563;
+        }
+        
+        body.dark-mode .password-help p,
+        body.dark-mode .login-footer p {
+            color: #9ca3af;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .login-left,
+            .login-right {
+                padding: 3rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+            }
+            
+            .login-left {
+                padding: 3rem 2rem;
+                min-height: 50vh;
+            }
+            
+            .login-right {
+                padding: 3rem 2rem;
+                min-height: 50vh;
+            }
+            
+            .login-form {
+                padding: 2rem;
+            }
+            
+            .logo img {
+                height: 70px;
+            }
+            
+            .logo-text h1 {
+                font-size: 1.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .login-left,
+            .login-right {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-form {
+                padding: 1.5rem;
+            }
+            
+            .logo img {
+                height: 60px;
+            }
+            
+            .logo-text h1 {
+                font-size: 1.6rem;
+            }
+            
+            .form-header h2 {
+                font-size: 1.6rem;
+            }
+            
+            .theme-btn {
+                top: 15px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tungi/Kunduz rejim tugmasi -->
+    <button id="themeToggle" class="theme-btn">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="login-container">
+        <!-- Chap qism - Ma'lumot -->
+        <div class="login-left">
+            <div class="login-logo-main">
+                <!-- Logo to'g'ri joylashuvi -->
+                <a href="/" class="logo">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Yoshlar Parlamenti Logo">
+                    <div class="logo-text">
+                        <h1>YOSHLAR PARLAMENTI</h1>
+                        <p>Rasmiy Platforma</p>
+                    </div>
+                </a>
+                
+                <div class="welcome-text">
+                    <h2><i class="fas fa-handshake"></i> Platformaga xush kelibsiz!</h2>
+                </div>
+            </div>
+            
+            <div class="login-info">
+                <p>Bu platforma orqali siz o'z faoliyatingizni boshqarasiz va jamoadoshlaringiz bilan hamkorlik qilasiz:</p>
+                <ul>
+                    <li>Oylik hisobotlaringizni topshirasiz</li>
+                    <li>Topshiriqlarni ko'rasiz va bajarasiz</li>
+                    <li>Reytingingizni kuzatasiz</li>
+                    <li>Faoliyatingizni baholashni ko'rasiz</li>
+                    <li>Yutuqlaringizni ulashasiz</li>
+                </ul>
+                
+                <div class="info-box">
+                    <h3><i class="fas fa-info-circle"></i> Muhim eslatma</h3>
+                    <p>Parolni unutgan bo'lsangiz, Telegram orqali administratorga murojaat qiling:</p>
+                    <p style="margin-top: 0.8rem;">
+                        <a href="https://t.me/QPYoshlarParlamentiBot" target="_blank" rel="noopener">
+                            <i class="fab fa-telegram"></i> @QPYoshlarParlamentiBot
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- O'ng qism - Forma -->
+        <div class="login-right">
+            <div class="login-form">
+                <div class="form-header">
+                    <h2>Hisobingizga kiring</h2>
+                    <p>ID va parolingizni kiriting</p>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }}">
+                                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="/login">
+                    <div class="form-group">
+                        <label for="user_id">Foydalanuvchi ID</label>
+                        <input type="text" 
+                               id="user_id" 
+                               name="user_id" 
+                               class="form-control" 
+                               placeholder="Masalan: FR-2023-001" 
+                               required
+                               autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Parol</label>
+                        <input type="password" 
+                               id="password" 
+                               name="password" 
+                               class="form-control" 
+                               placeholder="Parolingizni kiriting" 
+                               required
+                               autocomplete="current-password">
+                    </div>
+                    
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-sign-in-alt"></i> Kirish
+                    </button>
+                </form>
+                
+                <div class="password-help">
+                    <p><i class="fas fa-key"></i> ID ingizni bilmayotgan bo'lsangiz, administratorga murojaat qiling</p>
+                    <p><i class="fas fa-user-plus"></i> Birinchi marta kiryotgan bo'lsangiz, parolingizni so'rang</p>
+                </div>
+                
+                <div class="login-footer">
+                    <p>Yoshlar Parlamenti - Rasmiy Platforma</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tema o'zgartirish
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('themeToggle');
+            const icon = toggleBtn.querySelector('i');
+            const body = document.body;
+
+            // Saqlangan temani yuklash
+            if(localStorage.getItem('theme') === 'dark') {
+                body.classList.add('dark-mode');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+
+            // Tema o'zgartirish
+            toggleBtn.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+                
+                if(body.classList.contains('dark-mode')) {
+                    localStorage.setItem('theme', 'dark');
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,579 @@
+<!-- templates/admin_profile.html -->
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profil - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .profile-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        .back-btn {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .profile-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+        
+        .profile-sidebar {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+        }
+        
+        .profile-info h2 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .profile-info p {
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        
+        .badge-user {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge-admin {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .badge-debugger {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: var(--border-radius);
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        
+        .profile-main {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-light);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .edit-btn {
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .password-form {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: var(--border-radius);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+        }
+        
+        /* Tungi rejim */
+        body.dark-mode .profile-sidebar,
+        body.dark-mode .profile-main,
+        body.dark-mode .password-form {
+            background: #374151;
+        }
+        
+        body.dark-mode .stat-item {
+            background: #4b5563;
+        }
+        
+        body.dark-mode .form-control {
+            background: #4b5563;
+            border-color: #6b7280;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tungi/Kunduz rejim tugmasi -->
+    <button id="themeToggle" class="theme-btn">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="profile-container">
+        <!-- Sahifa sarlavhasi -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-user-shield"></i> Admin Profil</h1>
+                <p>Admin ma'lumotlari va sozlamalar</p>
+            </div>
+            <a href="/admin" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Admin Panelga qaytish
+            </a>
+        </div>
+        
+        <!-- Profil kontenti -->
+        <div class="profile-content">
+            <!-- Yon panel -->
+            <aside class="profile-sidebar">
+                <div class="profile-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                
+                <div class="profile-info">
+                    <h2>{{ user[3] if user else session.full_name }}</h2>
+                    <p><i class="fas fa-id-card"></i> {{ user[1] if user else session.user_id }}</p>
+                    <p><i class="fas fa-birthday-cake"></i> {{ user[5] if user else '' }} yosh</p>
+                    <p><i class="fas fa-calendar-alt"></i> {{ user[8] if user else '' }}</p>
+                    
+                    <div class="badge {% if user and user[6] == 'admin' %}badge-admin{% elif user and user[6] == 'debugger' %}badge-debugger{% else %}badge-user{% endif %}">
+                        {% if user and user[6] == 'admin' %}
+                            <i class="fas fa-shield-alt"></i> Admin
+                        {% elif user and user[6] == 'debugger' %}
+                            <i class="fas fa-cogs"></i> Super Admin
+                        {% else %}
+                            <i class="fas fa-user"></i> Admin
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Statistikalar -->
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ user[7] if user else 0 }}/20</div>
+                        <div class="stat-label">Joriy reyting</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ reports_count }}</div>
+                        <div class="stat-label">Hisobotlar</div>
+                    </div>
+                </div>
+                
+                <!-- Parolni o'zgartirish -->
+                <div style="margin-top: 1.5rem;">
+                    <button class="edit-btn" onclick="window.location.href='/admin_profile_settings'">
+                        <i class="fas fa-key"></i> Parolni o'zgartirish
+                    </button>
+                </div>
+            </aside>
+            
+            <!-- Asosiy kontent -->
+            <main class="profile-main">
+                <!-- Tablar -->
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('info')">Shaxsiy ma'lumotlar</button>
+                    <button class="tab" onclick="switchTab('security')">Xavfsizlik</button>
+                </div>
+                
+                <!-- Shaxsiy ma'lumotlar -->
+                <div id="info-tab" class="tab-content active">
+                    <h2 class="section-title">
+                        <i class="fas fa-info-circle"></i> Shaxsiy ma'lumotlar
+                    </h2>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                        <div>
+                            <h4><i class="fas fa-user"></i> Asosiy ma'lumotlar</h4>
+                            <div style="background: #f8fafc; padding: 1rem; border-radius: var(--border-radius); margin-top: 0.5rem;">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="padding: 0.5rem 0; color: var(--text-light);">To'liq ism:</td>
+                                        <td style="padding: 0.5rem 0; font-weight: 500;">{{ user[3] if user else session.full_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0.5rem 0; color: var(--text-light);">ID raqami:</td>
+                                        <td style="padding: 0.5rem 0; font-weight: 500;"><code>{{ user[1] if user else session.user_id }}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0.5rem 0; color: var(--text-light);">Rol:</td>
+                                        <td style="padding: 0.5rem 0; font-weight: 500;">
+                                            {% if user and user[6] == 'debugger' %}
+                                                Super Admin
+                                            {% elif user and user[6] == 'admin' %}
+                                                Admin
+                                            {% else %}
+                                                Foydalanuvchi
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4><i class="fas fa-user-circle"></i> Shaxsiy ma'lumotlar</h4>
+                            <div style="background: #f8fafc; padding: 1rem; border-radius: var(--border-radius); margin-top: 0.5rem;">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="padding: 0.5rem 0; color: var(--text-light);">Yosh:</td>
+                                        <td style="padding: 0.5rem 0; font-weight: 500;">{{ user[5] if user else '' }} yosh</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 0.5rem 0; color: var(--text-light);">Qo'shilgan sana:</td>
+                                        <td style="padding: 0.5rem 0; font-weight: 500;">{{ user[8] if user else '' }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Admin imtiyozlari -->
+                    <div style="margin-top: 2rem;">
+                        <h4><i class="fas fa-crown"></i> Admin imtiyozlari</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                            <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 1rem; border-radius: var(--border-radius);">
+                                <i class="fas fa-file-alt fa-2x"></i>
+                                <h5 style="margin-top: 0.5rem;">Hisobotlarni boshqarish</h5>
+                                <p style="font-size: 0.9rem; opacity: 0.9;">Barcha hisobotlarni ko'rish va baholash</p>
+                            </div>
+                            
+                            <div style="background: linear-gradient(135deg, #10b981, #047857); color: white; padding: 1rem; border-radius: var(--border-radius);">
+                                <i class="fas fa-users fa-2x"></i>
+                                <h5 style="margin-top: 0.5rem;">Foydalanuvchilar</h5>
+                                <p style="font-size: 0.9rem; opacity: 0.9;">Foydalanuvchilarni boshqarish va tahrirlash</p>
+                            </div>
+                            
+                            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 1rem; border-radius: var(--border-radius);">
+                                <i class="fas fa-tasks fa-2x"></i>
+                                <h5 style="margin-top: 0.5rem;">Topshiriqlar</h5>
+                                <p style="font-size: 0.9rem; opacity: 0.9;">Topshiriqlar yaratish va tahrirlash</p>
+                            </div>
+                            
+                            {% if user and user[6] == 'debugger' %}
+                            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 1rem; border-radius: var(--border-radius);">
+                                <i class="fas fa-cogs fa-2x"></i>
+                                <h5 style="margin-top: 0.5rem;">Super Admin</h5>
+                                <p style="font-size: 0.9rem; opacity: 0.9;">Barcha tizim sozlamalari</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Xavfsizlik -->
+                <div id="security-tab" class="tab-content">
+                    <h2 class="section-title">
+                        <i class="fas fa-shield-alt"></i> Xavfsizlik sozlamalari
+                    </h2>
+                    
+                    <!-- Parolni o'zgartirish formasi -->
+                    <div id="passwordForm" class="password-form">
+                        <h4><i class="fas fa-key"></i> Parolni o'zgartirish</h4>
+                        
+                        <div class="form-group">
+                            <label>Joriy parol</label>
+                            <input type="password" id="currentPassword" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Yangi parol</label>
+                            <input type="password" id="newPassword" class="form-control" minlength="6" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Yangi parolni takrorlang</label>
+                            <input type="password" id="confirmPassword" class="form-control" minlength="6" required>
+                        </div>
+                        
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <input type="checkbox" id="showPasswords" onchange="togglePasswordVisibility()">
+                            <label for="showPasswords">Parollarni ko'rsatish</label>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem;">
+                            <button type="button" class="edit-btn" onclick="updatePassword()">
+                                <i class="fas fa-save"></i> Parolni yangilash
+                            </button>
+                            <button type="button" class="edit-btn" style="background: var(--text-light);" onclick="togglePasswordForm()">
+                                <i class="fas fa-times"></i> Bekor qilish
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Xavfsizlik tavsiyalari -->
+                    <div style="margin-top: 2rem;">
+                        <h4><i class="fas fa-lightbulb"></i> Xavfsizlik tavsiyalari</h4>
+                        <div style="background: #fef3c7; padding: 1rem; border-radius: var(--border-radius); margin-top: 1rem;">
+                            <ul style="padding-left: 1.5rem;">
+                                <li>Murakkab paroldan foydalaning (harflar, raqamlar, belgilar)</li>
+                                <li>Parolni hech kimga bermang</li>
+                                <li>Muntazam ravishda parolni yangilang</li>
+                                <li>Shubhali faoliyat haqida darhol xabar bering</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Faollik tarixi -->
+                    <div style="margin-top: 2rem;">
+                        <h4><i class="fas fa-history"></i> So'nggi faollik</h4>
+                        <div style="background: #f8fafc; padding: 1rem; border-radius: var(--border-radius); margin-top: 1rem;">
+                            <p><i class="fas fa-sign-in-alt"></i> Oxirgi kirish: {{ user[9] if user and user|length > 9 else 'Ma\'lumot yo\'q' }}</p>
+                            <p><i class="fas fa-calendar-check"></i> Qo'shilgan sana: {{ user[8] if user else '' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Tab o'zgartirish
+        function switchTab(tabName) {
+            // Barcha tab va kontentlarni yashirish
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Faqat tanlangan tab va kontentni ko'rsatish
+            const tabElement = document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`);
+            if (tabElement) tabElement.classList.add('active');
+            
+            const contentElement = document.getElementById(`${tabName}-tab`);
+            if (contentElement) contentElement.classList.add('active');
+        }
+        
+        // Parol formasi
+        function togglePasswordForm() {
+            const form = document.getElementById('passwordForm');
+            if (form) {
+                form.style.display = form.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+        
+        // Parollarni ko'rsatish/yashirish
+        function togglePasswordVisibility() {
+            const show = document.getElementById('showPasswords').checked;
+            const inputs = ['currentPassword', 'newPassword', 'confirmPassword'];
+            
+            inputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) input.type = show ? 'text' : 'password';
+            });
+        }
+        
+        // Parolni yangilash
+        async function updatePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validatsiya
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('⚠️ Barcha maydonlarni to\'ldiring!');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                alert('⚠️ Parollar mos kelmadi!');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('⚠️ Parol kamida 6 ta belgidan iborat bo\'lishi kerak!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/reset_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Parol muvaffaqiyatli yangilandi!');
+                    togglePasswordForm();
+                    // Formani tozalash
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    document.getElementById('showPasswords').checked = false;
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            } catch (error) {
+                console.error('Xatolik:', error);
+                alert('❌ Server bilan aloqa xatosi');
+            }
+        }
+        
+        // Temani o'rnatish
+        function initializeTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            if (!themeToggle) return;
+            
+            const icon = themeToggle.querySelector('i');
+            
+            // Avvalgi temani yuklash
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                icon.className = 'fas fa-sun';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
+                if (document.body.classList.contains('dark-mode')) {
+                    icon.className = 'fas fa-sun';
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    icon.className = 'fas fa-moon';
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        }
+        
+        // Sahifa yuklanganda
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTheme();
+        });
+    </script>
+</body>
+</html>

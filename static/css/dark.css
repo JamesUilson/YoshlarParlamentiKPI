@@ -1,0 +1,501 @@
+/* static/css/dark.css */
+/* Bu fayl faqat tungi rejim uchun qo'shimcha stillar */
+
+/* Asosiy tungi rejim o'zgaruvchilari */
+:root.dark-mode {
+    --light-color: #1f2937;        /* Qorong'u fon */
+    --dark-color: #f9fafb;         /* Och rang matn */
+    --text-color: #f9fafb;         /* Asosiy matn */
+    --text-light: #9ca3af;         /* Ikkinchi darajali matn */
+    --border-color: #4b5563;       /* Chegaralar */
+    --shadow-color: rgba(0, 0, 0, 0.5); /* Soyalar */
+}
+
+body.dark-mode {
+    background-color: var(--light-color);
+    color: var(--text-color);
+}
+
+/* Kartochkalar va konteynerlar */
+body.dark-mode .card,
+body.dark-mode .stat-card,
+body.dark-mode .rating-criteria,
+body.dark-mode .task-item,
+body.dark-mode .report-item,
+body.dark-mode .setting-group {
+    background: #374151;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+/* Form elementlari */
+body.dark-mode .form-control,
+body.dark-mode select,
+body.dark-mode textarea {
+    background: #4b5563;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .form-control:focus {
+    border-color: var(--secondary-color);
+    background: #4b5563;
+}
+
+/* Tugmalar */
+body.dark-mode .btn-primary,
+body.dark-mode .btn-submit,
+body.dark-mode .btn-login {
+    background: var(--secondary-color);
+    color: white;
+}
+
+body.dark-mode .btn-draft {
+    background: #6b7280;
+    color: white;
+}
+
+/* Jadvalar */
+body.dark-mode table {
+    color: var(--text-color);
+}
+
+body.dark-mode th {
+    background: #374151;
+    color: var(--text-color);
+}
+
+body.dark-mode td {
+    background: #1f2937;
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode tr:hover {
+    background: #374151;
+}
+
+/* Navigatsiya */
+body.dark-mode .sidebar {
+    background: #374151;
+    border-color: var(--border-color);
+}
+
+body.dark-mode .sidebar-nav a {
+    color: var(--text-color);
+}
+
+body.dark-mode .sidebar-nav a:hover,
+body.dark-mode .sidebar-nav a.active {
+    background: var(--secondary-color);
+    color: white;
+}
+
+/* Progress bar */
+body.dark-mode .progress-bar {
+    background: #4b5563;
+}
+
+/* Alert va xabarlar */
+body.dark-mode .alert {
+    background: #374151;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .alert-success {
+    background: #064e3b;
+    color: #a7f3d0;
+    border-color: #047857;
+}
+
+body.dark-mode .alert-danger {
+    background: #7f1d1d;
+    color: #fecaca;
+    border-color: #991b1b;
+}
+
+/* Reyting tizimi */
+body.dark-mode .rating-system {
+    background: #374151;
+    border-color: var(--border-color);
+}
+
+body.dark-mode .total-rating {
+    background: #1f2937;
+}
+
+body.dark-mode .rating-warning {
+    background: #78350f;
+    color: #fde68a;
+    border-color: #92400e;
+}
+
+/* Admin panel */
+body.dark-mode .admin-sidebar,
+body.dark-mode .admin-main {
+    background: #374151;
+    border-color: var(--border-color);
+}
+
+body.dark-mode .nav-btn {
+    background: #4b5563;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .nav-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Debugger panel */
+body.dark-mode .console-output {
+    background: #111827;
+    color: #10b981;
+}
+
+body.dark-mode .data-table th {
+    background: #374151;
+}
+
+body.dark-mode .data-table td {
+    background: #1f2937;
+}
+
+/* Modal oynalar */
+body.dark-mode .modal-content {
+    background: #374151;
+    color: var(--text-color);
+}
+
+/* File upload */
+body.dark-mode .file-upload {
+    border-color: var(--border-color);
+    background: #4b5563;
+}
+
+body.dark-mode .file-item {
+    background: #374151;
+}
+
+/* Counter tugmalari */
+body.dark-mode .counter-btn {
+    background: #4b5563;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+/* Tablar */
+body.dark-mode .tabs {
+    border-color: var(--border-color);
+}
+
+body.dark-mode .tab {
+    color: var(--text-light);
+}
+
+body.dark-mode .tab.active {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Badge va statuslar */
+body.dark-mode .badge-user {
+    background: #1e40af;
+    color: #dbeafe;
+}
+
+body.dark-mode .badge-admin {
+    background: #065f46;
+    color: #d1fae5;
+}
+
+body.dark-mode .status-pending {
+    background: #78350f;
+    color: #fde68a;
+}
+
+body.dark-mode .status-rated {
+    background: #064e3b;
+    color: #a7f3d0;
+}
+
+/* Help text */
+body.dark-mode .help-text {
+    color: var(--text-light);
+}
+
+/* Theme tugmasi */
+body.dark-mode .theme-btn {
+    background: var(--secondary-color);
+    color: white;
+}
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar {
+    width: 10px;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #374151;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 5px;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Checkbox va radio */
+body.dark-mode input[type="checkbox"],
+body.dark-mode input[type="radio"] {
+    accent-color: var(--secondary-color);
+}
+
+/* Placeholder */
+body.dark-mode ::placeholder {
+    color: #9ca3af;
+}
+
+/* Linklar */
+body.dark-mode a {
+    color: #60a5fa;
+}
+
+body.dark-mode a:hover {
+    color: #3b82f6;
+}
+
+/* Separatorlar */
+body.dark-mode hr,
+body.dark-mode .section-title {
+    border-color: var(--border-color);
+}
+
+/* Dropdown */
+body.dark-mode .dropdown-content {
+    background: #374151;
+    border-color: var(--border-color);
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+/* Tooltip */
+body.dark-mode .tooltip {
+    background: #374151;
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+/* Loading spinner */
+body.dark-mode .spinner {
+    border-color: var(--border-color);
+    border-top-color: var(--secondary-color);
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #1a202c;
+    color: #e2e8f0;
+}
+
+body.dark-mode .container,
+body.dark-mode .profile-container {
+    background-color: #1a202c;
+}
+
+body.dark-mode .page-header,
+body.dark-mode .profile-header {
+    border-bottom-color: #4a5568;
+}
+
+body.dark-mode .help-card,
+body.dark-mode .faq-section,
+body.dark-mode .contact-form,
+body.dark-mode .profile-card,
+body.dark-mode .stat-card,
+body.dark-mode .chart-container,
+body.dark-mode .comparison-card,
+body.dark-mode .achievements,
+body.dark-mode .rating-display,
+body.dark-mode .recent-reports,
+body.dark-mode .tasks-list,
+body.dark-mode .filters,
+body.dark-mode .reports-table,
+body.dark-mode .district-ranking {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .help-icon {
+    background: linear-gradient(135deg, #4c51bf, #805ad5);
+}
+
+body.dark-mode .btn-submit,
+body.dark-mode .btn-save,
+body.dark-mode .btn-filter {
+    background-color: #4c51bf;
+}
+
+body.dark-mode .btn-submit:hover,
+body.dark-mode .btn-save:hover,
+body.dark-mode .btn-filter:hover {
+    background-color: #5a67d8;
+}
+
+body.dark-mode .form-control {
+    background-color: #4a5568;
+    border-color: #718096;
+    color: #e2e8f0;
+}
+
+body.dark-mode .form-control:focus {
+    border-color: #4c51bf;
+    box-shadow: 0 0 0 3px rgba(76, 81, 191, 0.3);
+}
+
+body.dark-mode .quick-link {
+    background-color: #4a5568;
+    color: #e2e8f0;
+}
+
+body.dark-mode .quick-link:hover {
+    background-color: #4c51bf;
+}
+
+body.dark-mode .faq-question {
+    background-color: #4a5568;
+    color: #e2e8f0;
+}
+
+body.dark-mode .faq-answer {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+body.dark-mode .danger-zone {
+    background-color: #742a2a;
+    border-color: #c53030;
+    color: #fed7d7;
+}
+
+body.dark-mode .password-section {
+    background-color: #2d3748;
+    border-left-color: #4c51bf;
+}
+
+body.dark-mode .district-ranking {
+    background: linear-gradient(135deg, #4c51bf, #805ad5);
+}
+
+body.dark-mode .dashboard-header {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+}
+
+body.dark-mode .sidebar {
+    background-color: #2d3748;
+    border-right-color: #4a5568;
+}
+
+body.dark-mode .sidebar-nav a {
+    color: #cbd5e0;
+}
+
+body.dark-mode .sidebar-nav a:hover,
+body.dark-mode .sidebar-nav a.active {
+    background-color: #4c51bf;
+    color: white;
+}
+
+body.dark-mode .main-content {
+    background-color: #1a202c;
+}
+
+body.dark-mode .table-header {
+    background-color: #4c51bf;
+}
+
+body.dark-mode .table-row {
+    border-bottom-color: #4a5568;
+}
+
+body.dark-mode .table-row:hover {
+    background-color: #2d3748;
+}
+
+body.dark-mode .btn-action {
+    background-color: #4a5568;
+    color: #e2e8f0;
+}
+
+body.dark-mode .btn-view {
+    background-color: #4c51bf;
+}
+
+body.dark-mode .btn-download {
+    background-color: #805ad5;
+}
+
+body.dark-mode .modal-content {
+    background-color: #2d3748;
+    color: #e2e8f0;
+}
+
+body.dark-mode .modal-header {
+    background-color: #4c51bf;
+}
+
+body.dark-mode .report-item,
+body.dark-mode .task-item {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+body.dark-mode .rating-warning {
+    background-color: #744210;
+    border-color: #d69e2e;
+    color: #fbd38d;
+}
+
+body.dark-mode .status-pending {
+    background-color: #744210;
+    color: #fbd38d;
+}
+
+body.dark-mode .status-rated {
+    background-color: #22543d;
+    color: #9ae6b4;
+}
+
+body.dark-mode .status-rejected {
+    background-color: #742a2a;
+    color: #feb2b2;
+}
+
+/* Theme toggle button */
+.theme-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4c51bf, #805ad5);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.theme-btn:hover {
+    transform: scale(1.1);
+}

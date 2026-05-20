@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topshiriqlar - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-color);
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .filter-group select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-filter {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .task-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .task-card.overdue {
+            border-left-color: #dc2626;
+        }
+        
+        .task-card.high-priority {
+            border-left-color: #dc2626;
+            background: #fef2f2;
+        }
+        
+        .task-card.medium-priority {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .task-card.low-priority {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .task-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .task-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--light-color);
+            color: var(--text-light);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+        
+        .task-type.urgent {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .task-type.monthly {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .task-type.regular {
+            background: #f0fdf4;
+            color: #065f46;
+        }
+        
+        .task-priority {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .priority-high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .priority-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .priority-low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .task-info {
+            margin: 1rem 0;
+        }
+        
+        .task-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+        }
+        
+        .deadline-warning {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .task-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .btn-task {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .btn-complete {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-view {
+            background: var(--light-color);
+            color: var(--text-color);
+        }
+        
+        .btn-disabled {
+            background: #9ca3af;
+            color: white;
+            cursor: not-allowed;
+        }
+        
+        .no-tasks {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            margin: 2rem auto;
+            border-radius: var(--border-radius);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .tasks-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sarlavha -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-tasks"></i> Topshiriqlar</h1>
+                <p>Barcha topshiriqlaringiz va ularning holati</p>
+            </div>
+            <a href="/dashboard" style="color: var(--primary-color); text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Dashboardga qaytish
+            </a>
+        </div>
+        
+        <!-- Statistik kartalar -->
+        <div class="stats-cards" id="statsContainer">
+            <!-- JavaScript bilan to'ldiriladi -->
+        </div>
+        
+        <!-- Filtrlash -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="statusFilter">Holat:</label>
+                <select id="statusFilter">
+                    <option value="all">Barchasi</option>
+                    <option value="pending">Kutilmoqda</option>
+                    <option value="in_progress">Jarayonda</option>
+                    <option value="completed">Bajarildi</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="priorityFilter">Avvaligi:</label>
+                <select id="priorityFilter">
+                    <option value="all">Barchasi</option>
+                    <option value="high">Yuqori</option>
+                    <option value="medium">O'rtacha</option>
+                    <option value="low">Past</option>
+                </select>
+            </div>
+            
+            <button class="btn-filter" onclick="loadTasks()">
+                <i class="fas fa-filter"></i> Filtrlash
+            </button>
+        </div>
+        
+        <!-- Topshiriqlar gridi -->
+        <div class="tasks-grid" id="tasksContainer">
+            <!-- JavaScript bilan to'ldiriladi -->
+        </div>
+        
+        <!-- Topshiriqni ko'rish modali -->
+        <div id="viewModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Topshiriq ma'lumotlari</h2>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- JavaScript bilan to'ldiriladi -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Topshiriqni bajarish modali -->
+        <div id="completeModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Topshiriqni bajarish</h2>
+                    <button class="modal-close" onclick="closeCompleteModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="taskFeedback">Izoh (ixtiyoriy):</label>
+                        <textarea id="taskFeedback" rows="4" placeholder="Topshiriq haqida izoh qoldiring..." 
+                                  style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: var(--border-radius);"></textarea>
+                    </div>
+                    <button class="btn-task btn-complete" onclick="submitTaskCompletion()" style="width: 100%; margin-top: 1rem;">
+                        <i class="fas fa-check-circle"></i> Bajarilgan deb belgilash
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        let currentTaskId = null;
+        
+        // Sahifa yuklanganda topshiriqlarni yuklash
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTasks();
+        });
+        
+        // Topshiriqlarni yuklash
+        async function loadTasks() {
+            try {
+                const status = document.getElementById('statusFilter').value;
+                const priority = document.getElementById('priorityFilter').value;
+                
+                const response = await fetch(`/api/user/tasks?status=${status}&priority=${priority}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStats(data.stats);
+                    updateTasksGrid(data.tasks);
+                } else {
+                    alert('Xatolik: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Topshiriqlarni yuklashda xatolik:', error);
+                alert('Topshiriqlarni yuklashda xatolik yuz berdi.');
+            }
+        }
+        
+        // Statistikani yangilash
+        function updateStats(stats) {
+            const statsContainer = document.getElementById('statsContainer');
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h3>Jami topshiriqlar</h3>
+                    <div class="value">${stats.total}</div>
+                    <p>Umumiy soni</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Bajarilgan</h3>
+                    <div class="value">${stats.completed}</div>
+                    <p>Muvaffaqiyatli bajarildi</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Jarayonda</h3>
+                    <div class="value">${stats.in_progress}</div>
+                    <p>Ish jarayonida</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Muddati o'tgan</h3>
+                    <div class="value">${stats.overdue}</div>
+                    <p>Vaqti o'tgan topshiriqlar</p>
+                </div>
+            `;
+        }
+        
+        // Topshiriqlar gridini yangilash
+        function updateTasksGrid(tasks) {
+            const tasksContainer = document.getElementById('tasksContainer');
+            
+            if (!tasks || tasks.length === 0) {
+                tasksContainer.innerHTML = `
+                    <div class="no-tasks">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h3>Hozircha topshiriq yo'q</h3>
+                        <p>Yangi topshiriqlar paydo bo'lganda bu yerda ko'rasiz</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            tasks.forEach(task => {
+                const priorityClass = `priority-${task.priority || 'medium'}`;
+                const typeClass = getTaskTypeClass(task.task_type);
+                const cardClass = getTaskCardClass(task);
+                
+                html += `
+                    <div class="task-card ${cardClass}">
+                        <div class="task-header">
+                            <div style="flex: 1;">
+                                <div class="task-title">${task.title}</div>
+                                <div>
+                                    <span class="task-type ${typeClass}">${getTaskTypeText(task.task_type)}</span>
+                                    <span class="task-priority ${priorityClass}">${getPriorityText(task.priority)}</span>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">
+                                    ${task.points || 5} ball
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="task-info">
+                            ${task.description ? `<p style="margin-bottom: 1rem; max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; white-space: normal;">${task.description.substring(0, 200)}${task.description.length > 200 ? '...' : ''}</p>` : ''}
+                            
+                            <div class="task-info-item">
+                                <i class="far fa-calendar"></i>
+                                <span>Muddati: <strong>${formatDate(task.deadline)}</strong></span>
+                                ${task.is_overdue ? '<span class="deadline-warning"> (Muddat o\'tgan!)</span>' : ''}
+                                ${task.days_left !== null ? `<span> (${task.days_left} kun qoldi)</span>` : ''}
+                            </div>
+                            
+                            <div class="task-info-item">
+                                <i class="fas fa-user-tie"></i>
+                                <span>Bergan: <strong>${task.admin_name || 'Admin'}</strong></span>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${task.progress || 0}%"></div>
+                        </div>
+                        
+                        <div class="task-actions">
+                            <button class="btn-task btn-view" onclick="viewTask('${task.task_id}')">
+                                <i class="fas fa-eye"></i> Ko'rish
+                            </button>
+                            
+                            ${task.status !== 'completed' ? `
+                            <button class="btn-task btn-complete" onclick="showCompleteModal('${task.task_id}')">
+                                <i class="fas fa-check-circle"></i> Bajarildi
+                            </button>
+                            ` : `
+                            <button class="btn-task btn-disabled" disabled>
+                                <i class="fas fa-check-circle"></i> Bajarilgan
+                            </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            tasksContainer.innerHTML = html;
+        }
+        
+        // Topshiriq turi sinfini olish
+        function getTaskTypeClass(type) {
+            const typeMap = {
+                'urgent': 'urgent',
+                'monthly': 'monthly',
+                'regular': 'regular'
+            };
+            return typeMap[type] || 'regular';
+        }
+        
+        // Topshiriq kartasi sinfini olish
+        function getTaskCardClass(task) {
+            if (task.is_overdue && task.status !== 'completed') {
+                return 'overdue';
+            }
+            if (task.priority === 'high') {
+                return 'high-priority';
+            }
+            if (task.priority === 'medium') {
+                return 'medium-priority';
+            }
+            if (task.priority === 'low') {
+                return 'low-priority';
+            }
+            return '';
+        }
+        
+        // Topshiriq turi matnini olish
+        function getTaskTypeText(type) {
+            const typeMap = {
+                'urgent': 'Zarur',
+                'monthly': 'Oylik',
+                'regular': 'Oddiy'
+            };
+            return typeMap[type] || 'Oddiy';
+        }
+        
+        // Priority matnini olish
+        function getPriorityText(priority) {
+            const priorityMap = {
+                'high': 'Yuqori',
+                'medium': 'O\'rtacha',
+                'low': 'Past'
+            };
+            return priorityMap[priority] || 'O\'rtacha';
+        }
+        
+        // Sanani formatlash
+        function formatDate(dateString) {
+            if (!dateString) return 'Muddat yo\'q';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('uz-UZ');
+        }
+        
+        // Topshiriqni ko'rish
+        async function viewTask(taskId) {
+            try {
+                const response = await fetch(`/api/user/get_task/${taskId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showTaskModal(data.task);
+                } else {
+                    alert('Xatolik: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Topshiriqni ko\'rishda xatolik:', error);
+                alert('Topshiriqni ko\'rishda xatolik yuz berdi.');
+            }
+        }
+        
+        // Topshiriq modali
+        function showTaskModal(task) {
+            const modal = document.getElementById('viewModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            const deadlineClass = task.is_overdue ? 'deadline-warning' : '';
+            
+            let html = `
+                <div style="margin-bottom: 1.5rem;">
+                    <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">${task.title}</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <span class="task-type ${getTaskTypeClass(task.task_type)}">${getTaskTypeText(task.task_type)}</span>
+                        <span class="task-priority priority-${task.priority}">${getPriorityText(task.priority)}</span>
+                        <span style="background: var(--light-color); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem;">
+                            ${task.points || 5} ball
+                        </span>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Tavsif</h3>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: var(--border-radius); max-width: 100%; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;">
+                        ${task.description || 'Tavsif yo\'q'}
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <h3 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Umumiy ma'lumotlar</h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <div><strong>Bergan:</strong> ${task.admin_name || 'Admin'}</div>
+                            <div><strong>Holat:</strong> ${getStatusText(task.status)}</div>
+                            <div><strong>Jarayon:</strong> ${task.progress || 0}%</div>
+                            <div><strong>Yaratilgan:</strong> ${formatDate(task.created_at)}</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Muddat</h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            <div class="${deadlineClass}">
+                                <strong>Muddati:</strong> ${formatDate(task.deadline)}
+                                ${task.is_overdue ? '<br><small style="color: #dc2626;">(Muddat o\'tgan!)</small>' : ''}
+                            </div>
+                            ${task.days_left !== null ? `<div><strong>Qolgan kunlar:</strong> ${task.days_left}</div>` : ''}
+                            ${task.completed_at ? `<div><strong>Bajarilgan:</strong> ${formatDate(task.completed_at)}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Progress bar
+            html += `
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Jarayon</h3>
+                    <div class="progress-bar" style="height: 12px; margin-bottom: 0.5rem;">
+                        <div class="progress-fill" style="width: ${task.progress || 0}%"></div>
+                    </div>
+                    <div style="text-align: center; font-weight: bold;">${task.progress || 0}%</div>
+                </div>
+            `;
+            
+            // Feedback
+            if (task.feedback) {
+                html += `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Izoh</h3>
+                        <div style="background: #f0fdf4; padding: 1rem; border-radius: var(--border-radius);">
+                            ${task.feedback}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // File attachment
+            if (task.file_path) {
+                const fileName = task.file_path.split('/').pop();
+                html += `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Yuklangan hujjat</h3>
+                        <div style="background: #fef3c7; padding: 1rem; border-radius: var(--border-radius);">
+                            <div id="task-file-preview-${task.id}" style="margin-bottom: 10px;"></div>
+                            <a href="/download/${fileName}" download="${fileName}"
+                               style="display: inline-block; padding: 10px 20px; background: var(--primary-color); color: white; text-decoration: none; border-radius: 4px; cursor: pointer;">
+                                <i class="fas fa-download"></i> Faylni yuklab olish
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            modalBody.innerHTML = html;
+            modal.style.display = 'block';
+            
+            // File preview
+            if (task.file_path) {
+                const filePath = task.file_path;
+                const fileName = filePath.split('/').pop();
+                const fileExt = fileName.split('.').pop().toLowerCase();
+                const previewContainer = document.getElementById(`task-file-preview-${task.id}`);
+                
+                console.log("File preview:", { filePath, fileName, fileExt, previewContainer, taskId: task.id, task });
+                
+                if (previewContainer) {
+                    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt)) {
+                        previewContainer.innerHTML = `<img src="/download/${fileName}" style="max-width: 100%; max-height: 400px; border-radius: 8px; border: 1px solid #ddd;" alt="Preview">`;
+                    } else if (fileExt === 'pdf') {
+                        previewContainer.innerHTML = `<embed src="/download/${fileName}" type="application/pdf" width="100%" height="400px" style="border-radius: 8px; border: 1px solid #ddd;">`;
+                    } else {
+                        previewContainer.innerHTML = `<p style="color: #6b7280; font-size: 0.9rem;"><i class="fas fa-file"></i> Fayl turi: ${fileExt.toUpperCase()}</p>`;
+                    }
+                } else {
+                    console.error("Preview container not found for ID:", `task-file-preview-${task.id}`);
+                    console.log("Available elements with task-file-preview:", document.querySelectorAll('[id^="task-file-preview"]'));
+                }
+            }
+        }
+        
+        // Topshiriqni bajarish modali
+        function showCompleteModal(taskId) {
+            currentTaskId = taskId;
+            document.getElementById('completeModal').style.display = 'block';
+            document.getElementById('taskFeedback').value = '';
+        }
+        
+        // Topshiriqni bajarish
+        async function submitTaskCompletion() {
+            if (!currentTaskId) return;
+            
+            const feedback = document.getElementById('taskFeedback').value;
+            
+            try {
+                const response = await fetch(`/api/user/complete_task/${currentTaskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ feedback: feedback })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Topshiriq muvaffaqiyatli bajarildi!');
+                    closeCompleteModal();
+                    loadTasks(); // Yangilash
+                } else {
+                    alert('Xatolik: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Topshiriqni bajarishda xatolik:', error);
+                alert('Topshiriqni bajarishda xatolik yuz berdi.');
+            }
+        }
+        
+        // Holat matnini olish
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Kutilmoqda',
+                'in_progress': 'Jarayonda',
+                'completed': 'Bajarildi'
+            };
+            return statusMap[status] || status;
+        }
+        
+        // Modalni yopish
+        function closeModal() {
+            document.getElementById('viewModal').style.display = 'none';
+        }
+        
+        // Topshiriqni bajarish modali
+        function closeCompleteModal() {
+            document.getElementById('completeModal').style.display = 'none';
+            currentTaskId = null;
+        }
+        
+        // Tashqariga bosganda modalni yopish
+        window.onclick = function(event) {
+            const viewModal = document.getElementById('viewModal');
+            const completeModal = document.getElementById('completeModal');
+            
+            if (event.target === viewModal) {
+                closeModal();
+            }
+            if (event.target === completeModal) {
+                closeCompleteModal();
+            }
+        };
+    </script>
+</body>
+</html>

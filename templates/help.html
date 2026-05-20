@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yordam - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}" id="dark-style" disabled>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <style>
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-color);
+        }
+        
+        .help-sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .help-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .help-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .help-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .faq-section {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .faq-item {
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .faq-question {
+            padding: 1rem;
+            background: #f8fafc;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+        }
+        
+        .faq-question:hover {
+            background: #f1f5f9;
+        }
+        
+        .faq-answer {
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: none;
+        }
+        
+        .faq-answer.show {
+            display: block;
+        }
+        
+        .contact-form {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+        }
+        
+        .contact-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .contact-method {
+            background: #f8fafc;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .contact-method .icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .telegram-btn {
+            background: #0088cc;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        
+        .telegram-btn:hover {
+            background: #0077b5;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .btn-submit {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        
+        .btn-submit:hover {
+            background: var(--secondary-color);
+        }
+        
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .quick-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--light-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        
+        .quick-link:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .help-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+     <!-- Tungi/Kunduz rejim tugmasi -->
+    <button id="themeToggle" class="theme-btn">
+        <i class="fas fa-moon"></i>
+    </button>
+    
+    <div class="container">
+        <!-- Sarlavha -->
+        <div class="page-header">
+            <h1><i class="fas fa-question-circle"></i> Yordam Markazi</h1>
+            <p>Platformadan to'liq foydalanish uchun qo'llanma</p>
+        </div>
+        
+        <!-- Tezkor yordam bo'limlari -->
+        <div class="help-sections">
+            <div class="help-card">
+                <div class="help-icon">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <h2>Hisobot topshirish</h2>
+                <p>Hisobot qanday topshirilishi, qanday ma'lumotlar kerakligi va fayl yuklash bo'yicha ko'rsatmalar.</p>
+                <a href="#faq" onclick="scrollToSection('faq')" style="color: var(--primary-color); text-decoration: none;">
+                    Ko'rsatmalar <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="help-card">
+                <div class="help-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h2>Admin vazifalari</h2>
+                <p>Admin tizimni qanday boshqaradi, hisobotlarni tasdiqlash va foydalanuvchilar bilan ishlash.</p>
+                <a href="#admin" onclick="scrollToSection('admin')" style="color: var(--primary-color); text-decoration: none;">
+                    Batafsil <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            
+            <div class="help-card">
+                <div class="help-icon">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <h2>Profil sozlamalari</h2>
+                <p>Profil ma'lumotlari, parol o'zgartirish va hisob sozlamalari bo'yicha qo'llanma.</p>
+                <a href="/profile_settings" style="color: var(--primary-color); text-decoration: none;">
+                    Sozlamalarga o'tish <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- FAQ -->
+        <div class="faq-section" id="faq">
+            <h2 style="margin-bottom: 1.5rem;"><i class="fas fa-question"></i> Tez-tez so'raladigan savollar (FAQ)</h2>
+            <div id="faqList">
+                <!-- JavaScript bilan to'ldiriladi -->
+            </div>
+        </div>
+        
+        <!-- Admin haqida ma'lumot -->
+        <div class="faq-section" id="admin">
+            <h2 style="margin-bottom: 1.5rem;"><i class="fas fa-user-shield"></i> Admin tizimi haqida</h2>
+            <div class="help-card" style="box-shadow: none; border: 1px solid #e5e7eb;">
+                <h3>Adminning vazifalari:</h3>
+                <ul style="padding-left: 1.5rem; margin-bottom: 1rem;">
+                    <li><strong>Hisobotlarni ko'rib chiqish:</strong> Foydalanuvchilardan kelgan hisobotlarni tekshirish va tasdiqlash</li>
+                    <li><strong>Reyting hisoblash:</strong> Foydalanuvchilar faolligi asosida reyting ballarini hisoblash</li>
+                    <li><strong>Foydalanuvchilarni boshqarish:</strong> Yangi foydalanuvchilarni qo'shish, parollarni tiklash</li>
+                    <li><strong>Topshiriqlar berish:</strong> Foydalanuvchilarga vazifalar va topshiriqlar tayinlash</li>
+                    <li><strong>Statistika:</strong> Platforma faolligi bo'yicha statistik ma'lumotlarni yuritish</li>
+                </ul>
+                
+                <h3>Elektron portal bilan bog'lanish:</h3>
+                <p>Agar loyiha haqida savollaringiz bo‘lsa, biror voqea yoki giyohvandlik bilan bog‘liq voqealarga guvoh bo‘lsangiz, yoki tizim muammolari haqida xabar berish uchun quyidagi kontaktlar orqali bog'lanishingiz mumkin:</p>
+                <div class="contact-methods">
+                    <div class="contact-method">
+                        <div class="icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h4>Email orqali</h4>
+                        <p>baxatech2025@gmail.com</p>
+                    </div>
+                    <div class="contact-method">
+                        <div class="icon">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <h4>Telifon orqali</h4>
+                        <p>+998 91 071 03 09</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aloqa formasi -->
+        <div class="contact-form">
+            <h2 style="margin-bottom: 1.5rem;"><i class="fas fa-envelope"></i> Savolingiz bormi?</h2>
+            <p style="margin-bottom: 1.5rem;">Savollaringizni email orqali yoki Telegram botimiz orqali yuborishingiz mumkin:</p>
+            
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <a href="mailto:baxatech2025@gmail.com" class="telegram-btn" style="background: #d44638;">
+                    <i class="fas fa-envelope"></i> Email yuborish
+                </a>
+                <a href="https://t.me/QPYoshlarParlamentiBot" target="_blank" class="telegram-btn">
+                    <i class="fab fa-telegram"></i> Telegram orqali
+                </a>
+            </div>
+            
+            <h3 style="margin-bottom: 1rem;">Yoki formani to'ldiring:</h3>
+            <form id="contactForm">
+                <div class="form-group">
+                    <label for="name">Ismingiz</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email manzilingiz</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="subject">Mavzu</label>
+                    <input type="text" id="subject" name="subject" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Xabar</label>
+                    <textarea id="message" name="message" rows="4" class="form-control" required></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> Xabar yuborish
+                </button>
+            </form>
+        </div>
+        
+        <!-- Tezkor havolalar -->
+        <div class="quick-links">
+            <a href="/dashboard" class="quick-link">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="/submit_report" class="quick-link">
+                <i class="fas fa-file-upload"></i>
+                <span>Hisobot topshirish</span>
+            </a>
+            
+            <a href="/user_tasks" class="quick-link">
+                <i class="fas fa-tasks"></i>
+                <span>Topshiriqlar</span>
+            </a>
+            
+            <a href="/profile_settings" class="quick-link">
+                <i class="fas fa-user-cog"></i>
+                <span>Profil sozlamalari</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // Sahifa yuklanganda FAQ yuklash
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadFAQ();
+            setupContactForm();
+            setupFAQToggle();
+        });
+        
+        // FAQ yuklash
+        async function loadFAQ() {
+            try {
+                const response = await fetch('/api/help/faq');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateFAQList(data.faq);
+                }
+            } catch (error) {
+                console.error('FAQ yuklashda xatolik:', error);
+                // Agar API ishlamasa, default FAQ ko'rsatish
+                showDefaultFAQ();
+            }
+        }
+        
+        // FAQ ro'yxatini yangilash
+        function updateFAQList(faqItems) {
+            const faqList = document.getElementById('faqList');
+            
+            let html = '';
+            faqItems.forEach((item, index) => {
+                html += `
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFAQ(${index})">
+                            <span>${item.question}</span>
+                            <i class="fas fa-chevron-down" id="faqIcon${index}"></i>
+                        </div>
+                        <div class="faq-answer" id="faqAnswer${index}">
+                            ${item.answer}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            faqList.innerHTML = html;
+        }
+        
+        // Default FAQ - Admin haqida savollar qo'shildi
+        function showDefaultFAQ() {
+            const defaultFAQ = [
+                {
+                    question: 'Platformaga qanday kirish mumkin?',
+                    answer: 'Login va parol orqali tizimga kirishingiz mumkin. Agar login/parolni unutgan bo\'lsangiz, admin bilan bog\'laning.'
+                },
+                {
+                    question: 'Hisobot qachongacha topshirilishi kerak?',
+                    answer: 'Har oyning 5 kuni soat 23:59 gacha oldingi oy hisobotini topshirishingiz kerak.'
+                },
+                {
+                    question: 'Admin kim va nima vazifalarni bajaradi?',
+                    answer: 'Admin - tizimni boshqaruvchi shaxs. U hisobotlarni ko\'rib chiqadi, tasdiqlaydi, reyting hisoblaydi, foydalanuvchilarni boshqaradi va topshiriqlar beradi.'
+                },
+                {
+                    question: 'Admin bilan qanday bog\'lanish mumkin?',
+                    answer: 'Admin bilan email (admin@yoshlarparlamenti.uz), telefon (+998 71 123 45 67) yoki Telegram bot orqali bog\'lanishingiz mumkin.'
+                },
+                {
+                    question: 'Reyting qanday hisoblanadi?',
+                    answer: 'Reyting hisobotlar to\'g\'riligi, topshiriqlar bajarilishi, vaqtida hisobot topshirish kabi omillar asosida hisoblanadi. Batafsil ma\'lumot uchun "Reyting tizimi" bo\'limiga qarang.'
+                },
+                {
+                    question: 'Hisobotim rad etilganda nima qilish kerak?',
+                    answer: 'Agar hisobotingiz rad etilgan bo\'lsa, admin sizga izoh qoldiradi. Izoh asosida hisobotni tuzatib, qayta topshirishingiz mumkin.'
+                },
+                {
+                    question: 'Parolni unutib qo\'ysam nima qilish kerak?',
+                    answer: '"Parolni unutdim" tugmasini bosish orqali parolni tiklash uchun so\'rov yuborishingiz mumkin yoki admin bilan bog\'lanishingiz kerak.'
+                }
+            ];
+            
+            updateFAQList(defaultFAQ);
+        }
+        
+        // FAQ toggle
+        function setupFAQToggle() {
+            // Event listenerlar DOM yuklangandan so'ng o'rnatiladi
+        }
+        
+        // FAQ ni ochish/yopish
+        function toggleFAQ(index) {
+            const answer = document.getElementById(`faqAnswer${index}`);
+            const icon = document.getElementById(`faqIcon${index}`);
+            
+            answer.classList.toggle('show');
+            
+            if (answer.classList.contains('show')) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+        
+        // Aloqa formasi - Email orqali yuborish
+        function setupContactForm() {
+            document.getElementById('contactForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    subject: document.getElementById('subject').value,
+                    message: document.getElementById('message').value
+                };
+                
+                await submitContactForm(formData);
+            });
+        }
+        
+        // Contact form yuborish - Email yuborish
+        async function submitContactForm(data) {
+            try {
+                // Email yuborish uchun mailto link yaratish
+                const email = 'admin@yoshlarparlamenti.uz';
+                const subject = encodeURIComponent(data.subject);
+                const body = encodeURIComponent(`Ism: ${data.name}\nEmail: ${data.email}\n\nXabar:\n${data.message}`);
+                
+                // Email ochish
+                window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+                
+                // Formani tozalash
+                document.getElementById('contactForm').reset();
+                
+                // Xabar yuborildi haqida bildirish
+                alert('Email dasturingiz ochildi. Xabaringizni yuboring va sahifaga qaytib kelishingiz mumkin.');
+                
+            } catch (error) {
+                console.error('Contact form yuborishda xatolik:', error);
+                alert('Xabaringizni yuborishda xatolik yuz berdi. Iltimos, to\'g\'ridan-to\'g\'ri email yuboring: admin@yoshlarparlamenti.uz');
+            }
+        }
+        
+        // Bo'limga o'tish
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    </script>
+</body>
+</html>

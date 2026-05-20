@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reyting Statistikasi - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}" id="dark-style" disabled>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-color);
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+            height: 400px;
+        }
+        
+        .chart-title {
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .comparison-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+
+        
+        .ranking-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .achievements {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .achievement-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="themeToggle" class="theme-btn">
+        <i class="fas fa-moon"></i>
+    </button>
+    <div class="container">
+        <!-- Sarlavha -->
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-chart-line"></i> Reyting Statistikasi</h1>
+                <p>Reytingingizning o'zgarishi va statistik ma'lumotlar</p>
+            </div>
+            <a href="/dashboard" style="color: var(--primary-color); text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Dashboardga qaytish
+            </a>
+        </div>
+        
+        <!-- Hudud reytingi -->
+
+        
+        <!-- Statistik kartalar -->
+        <div class="stats-cards" id="statsContainer">
+            <!-- JavaScript bilan to'ldiriladi -->
+        </div>
+        
+        <!-- Grafiklar -->
+        <div class="chart-container">
+            <div class="chart-title">
+                <h2>Oylik reyting o'zgarishi</h2>
+                <select id="chartType" onchange="updateChart()">
+                    <option value="line">Chiziqli diagramma</option>
+                    <option value="bar">Ustunli diagramma</option>
+                </select>
+            </div>
+            <canvas id="ratingChart"></canvas>
+        </div>
+        
+        <!-- Topshiriq statistikasi -->
+        <div class="chart-container">
+            <div class="chart-title">
+                <h2>Topshiriq statistikasi</h2>
+            </div>
+            <canvas id="taskChart"></canvas>
+        </div>
+        
+        <!-- Reyting solishtirish -->
+        <div class="comparison-grid">
+            <div class="comparison-card">
+                <h3><i class="fas fa-trophy"></i> Yutuqlar</h3>
+                <div id="achievementsList">
+                    <!-- JavaScript bilan to'ldiriladi -->
+                </div>
+            </div>
+            
+            <div class="comparison-card">
+                <h3><i class="fas fa-bullseye"></i> Maqsadlar</h3>
+                <div id="goalsList">
+                    <!-- JavaScript bilan to'ldiriladi -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        let ratingChart = null;
+        let taskChart = null;
+        
+        // Sahifa yuklanganda statistikani yuklash
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadRatingStatistics();
+        });
+        
+        // Reyting statistikasini yuklash
+        async function loadRatingStatistics() {
+            try {
+                const response = await fetch('/api/user/rating_statistics');
+                const data = await response.json();
+                
+                if (data.success) {
+
+                    updateStatsCards(data.user_stats);
+                    updateAchievements(data.user_stats);
+                    updateGoals(data.user_stats);
+                    createCharts(data.rating_history, data.task_stats);
+                } else {
+                    alert('Xatolik: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Statistikani yuklashda xatolik:', error);
+                alert('Statistikani yuklashda xatolik yuz berdi.');
+            }
+        }
+        
+        // Hudud reytingini yangilash
+        
+        
+        // Statistik kartalarni yangilash
+        function updateStatsCards(stats) {
+            const statsContainer = document.getElementById('statsContainer');
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h3>Joriy reyting</h3>
+                    <div class="value">${stats.current_rating || 0}/20</div>
+                    <p>Hozirgi balansiz</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Topshirilgan hisobotlar</h3>
+                    <div class="value">${stats.report_count || 0}</div>
+                    <p>Umumiy soni</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Bajarilgan topshiriqlar</h3>
+                    <div class="value">${stats.task_count || 0}</div>
+                    <p>Muvaffaqiyatli bajarildi</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>O'rtacha baho</h3>
+                    <div class="value">${stats.avg_report_score || 0}</div>
+                    <p>Hisobot bahosi</p>
+                </div>
+            `;
+        }
+        
+        // Yutuqlarni yangilash
+        function updateAchievements(stats) {
+            const achievementsList = document.getElementById('achievementsList');
+            
+            const achievements = [];
+            
+            if (stats.current_rating >= 18) {
+                achievements.push({
+                    icon: 'fas fa-trophy',
+                    title: 'A\'lo baholi',
+                    description: '18+ ball bilan eng yuqori baholangan'
+                });
+            }
+            
+            if (stats.report_count >= 10) {
+                achievements.push({
+                    icon: 'fas fa-file-alt',
+                    title: 'Sodiq xodim',
+                    description: '10+ hisobot topshirgan'
+                });
+            }
+            
+            if (stats.task_count >= 5) {
+                achievements.push({
+                    icon: 'fas fa-tasks',
+                    title: 'Ishchan',
+                    description: '5+ topshiriq bajargan'
+                });
+            }
+            
+            if (stats.avg_report_score >= 15) {
+                achievements.push({
+                    icon: 'fas fa-star',
+                    title: 'Sifatli ish',
+                    description: 'O\'rtacha baho 15+'
+                });
+            }
+            
+            let html = '';
+            achievements.forEach(achievement => {
+                html += `
+                    <div class="achievement-item">
+                        <div class="achievement-icon">
+                            <i class="${achievement.icon}"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 0.25rem;">${achievement.title}</h4>
+                            <p style="font-size: 0.9rem; color: var(--text-light);">${achievement.description}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (achievements.length === 0) {
+                html = `
+                    <div style="text-align: center; padding: 2rem; color: var(--text-light);">
+                        <i class="fas fa-medal" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                        <p>Hali yutuqlaringiz yo'q. Faollikni oshiring!</p>
+                    </div>
+                `;
+            }
+            
+            achievementsList.innerHTML = html;
+        }
+        
+        // Maqsadlarni yangilash
+        function updateGoals(stats) {
+            const goalsList = document.getElementById('goalsList');
+            
+            const goals = [
+                {
+                    target: 20,
+                    current: stats.current_rating || 0,
+                    title: 'Maksimal reyting',
+                    description: '20 ballga erishish',
+                    icon: 'fas fa-flag-checkered'
+                },
+                {
+                    target: 15,
+                    current: stats.avg_report_score || 0,
+                    title: 'Yaxshi baho',
+                    description: 'O\'rtacha 15+ ball',
+                    icon: 'fas fa-chart-line'
+                },
+                {
+                    target: 12,
+                    current: stats.report_count || 0,
+                    title: 'Hisobotlar',
+                    description: '12 ta hisobot topshirish',
+                    icon: 'fas fa-file-alt'
+                },
+                {
+                    target: 10,
+                    current: stats.task_count || 0,
+                    title: 'Topshiriqlar',
+                    description: '10 ta topshiriq bajarish',
+                    icon: 'fas fa-tasks'
+                }
+            ];
+            
+            let html = '';
+            goals.forEach(goal => {
+                const percentage = Math.min(100, (goal.current / goal.target) * 100);
+                
+                html += `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="${goal.icon}" style="color: var(--primary-color);"></i>
+                                <div>
+                                    <h4 style="margin-bottom: 0.25rem;">${goal.title}</h4>
+                                    <p style="font-size: 0.9rem; color: var(--text-light);">${goal.description}</p>
+                                </div>
+                            </div>
+                            <div style="font-weight: bold; color: var(--primary-color);">
+                                ${goal.current}/${goal.target}
+                            </div>
+                        </div>
+                        
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; background: var(--primary-color); width: ${percentage}%; border-radius: 3px;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            goalsList.innerHTML = html;
+        }
+        
+        // Grafiklarni yaratish
+        function createCharts(ratingHistory, taskStats) {
+            // Reyting grafigi
+            const ratingCtx = document.getElementById('ratingChart').getContext('2d');
+            
+            const ratingLabels = ratingHistory.map(item => item.month).reverse();
+            const ratingData = ratingHistory.map(item => item.rating).reverse();
+            
+            if (ratingChart) {
+                ratingChart.destroy();
+            }
+            
+            ratingChart = new Chart(ratingCtx, {
+                type: 'line',
+                data: {
+                    labels: ratingLabels,
+                    datasets: [{
+                        label: 'Reyting',
+                        data: ratingData,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 20,
+                            title: {
+                                display: true,
+                                text: 'Reyting (0-20)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Oy'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Reyting: ${context.parsed.y} ball`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Topshiriq grafigi
+            const taskCtx = document.getElementById('taskChart').getContext('2d');
+            
+            const taskLabels = taskStats.map(item => item.month).reverse();
+            const pointsData = taskStats.map(item => item.points_earned).reverse();
+            const tasksData = taskStats.map(item => item.tasks_completed).reverse();
+            
+            if (taskChart) {
+                taskChart.destroy();
+            }
+            
+            taskChart = new Chart(taskCtx, {
+                type: 'bar',
+                data: {
+                    labels: taskLabels,
+                    datasets: [
+                        {
+                            label: 'Olingan ballar',
+                            data: pointsData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                            borderColor: 'rgb(16, 185, 129)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Bajarilgan topshiriqlar',
+                            data: tasksData,
+                            backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Soni'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Oy'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Grafik turini o'zgartirish
+        function updateChart() {
+            const chartType = document.getElementById('chartType').value;
+            
+            if (ratingChart) {
+                ratingChart.config.type = chartType;
+                ratingChart.update();
+            }
+        }
+    </script>
+</body>
+</html>

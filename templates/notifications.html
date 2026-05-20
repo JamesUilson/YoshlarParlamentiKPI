@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bildirishnomalar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .notifications-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+        
+        .notification-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            box-shadow: var(--box-shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .notification-item.unread {
+            border-left-color: var(--danger-color);
+            background: #fef2f2;
+        }
+        
+        .notification-time {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 0.5rem;
+        }
+        
+        .mark-read-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="notifications-container">
+        <h1><i class="fas fa-bell"></i> Bildirishnomalar</h1>
+        
+        {% if notifications %}
+            <div style="margin-top: 2rem;">
+                {% for notification in notifications %}
+                <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h3 style="margin: 0 0 0.5rem 0;">
+                                {% if notification.type == 'announcement' %}
+                                    <i class="fas fa-bullhorn" style="color: var(--warning-color);"></i>
+                                {% elif notification.type == 'task' %}
+                                    <i class="fas fa-tasks" style="color: var(--primary-color);"></i>
+                                {% elif notification.type == 'rating' %}
+                                    <i class="fas fa-star" style="color: var(--accent-color);"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                                {{ notification.title }}
+                            </h3>
+                            <p style="margin: 0;">{{ notification.message }}</p>
+                            <div class="notification-time">
+                                <i class="far fa-clock"></i> {{ notification.created_at }}
+                            </div>
+                        </div>
+                        {% if not notification.is_read %}
+                        <button class="mark-read-btn" onclick="markAsRead('{{ notification.notification_id }}')">
+                            <i class="fas fa-check"></i> O'qildi
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 3rem; color: var(--text-light);">
+                <i class="far fa-bell fa-3x" style="margin-bottom: 1rem;"></i>
+                <h3>Hozircha bildirishnomalar yo'q</h3>
+                <p>Yangiliklar paydo bo'lganda ular bu yerda ko'rinadi</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+    function markAsRead(notificationId) {
+        fetch(`/api/mark_notification_read/${notificationId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    // 10 soniyada bir yangilash
+    setInterval(() => {
+        location.reload();
+    }, 10000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Sozlamalari - Yoshlar Parlamenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/parliament.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}" id="dark-style" disabled>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <style>
+        :root {
+            --parl-navy: #0A1628;
+            --parl-royal: #1A3A6B;
+            --parl-sapphire: #2563EB;
+            --parl-sky: #60A5FA;
+            --parl-gold: #D4AF37;
+            --parl-gold-light: #F0D060;
+            --parl-cream: #F4F6FB;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--parl-cream);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--parl-navy);
+            min-height: 100vh;
+        }
+        /* TOP BAR */
+        .top-bar {
+            background: linear-gradient(135deg, var(--parl-navy) 0%, var(--parl-royal) 100%);
+            border-bottom: 3px solid var(--parl-gold);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(10,22,40,0.25);
+        }
+        .top-bar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+        .top-bar-brand .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--parl-gold), var(--parl-gold-light));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--parl-navy);
+            font-size: 1.1rem;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+        .top-bar-brand .brand-text {
+            color: #fff;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .top-bar-brand .brand-sub {
+            color: var(--parl-gold-light);
+            font-size: 0.68rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+        }
+        .top-bar-nav { display: flex; gap: 0.5rem; align-items: center; }
+        .top-bar-nav a {
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            padding: 0.4rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .top-bar-nav a:hover, .top-bar-nav a.active {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+        }
+        /* PAGE */
+        .page-container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+        /* HERO */
+        .profile-hero {
+            background: linear-gradient(135deg, var(--parl-navy) 0%, var(--parl-royal) 100%);
+            border-radius: 16px;
+            padding: 2rem 2rem 1.5rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            border-bottom: 3px solid var(--parl-gold);
+            box-shadow: 0 8px 32px rgba(10,22,40,0.18);
+        }
+        .profile-avatar-lg {
+            width: 88px;
+            height: 88px;
+            background: linear-gradient(135deg, var(--parl-gold), var(--parl-gold-light));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--parl-navy);
+            flex-shrink: 0;
+            border: 3px solid rgba(255,255,255,0.2);
+            font-family: 'Playfair Display', serif;
+        }
+        .profile-hero-info h1 {
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            font-size: 1.5rem;
+            margin: 0 0 0.25rem;
+        }
+        .profile-hero-info p {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.88rem;
+            margin: 0;
+        }
+        .profile-hero-info .user-id-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(212,175,55,0.15);
+            border: 1px solid rgba(212,175,55,0.4);
+            color: var(--parl-gold-light);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 0.4rem;
+        }
+        /* CARDS */
+        .profile-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 1.75rem;
+            box-shadow: 0 2px 16px rgba(10,22,40,0.07);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(10,22,40,0.06);
+            border-top: 3px solid var(--parl-sapphire);
+        }
+        .profile-card.gold-accent {
+            border-top-color: var(--parl-gold);
+        }
+        .profile-card.danger-accent {
+            border-top-color: #ef4444;
+        }
+        .card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--parl-navy);
+            margin: 0 0 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .card-title i { color: var(--parl-sapphire); font-size: 1rem; }
+        .card-title.gold i { color: var(--parl-gold); }
+        .card-title.red i { color: #ef4444; }
+        /* FORM */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+        .form-grid .full-width { grid-column: 1 / -1; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group label {
+            font-size: 0.83rem;
+            font-weight: 600;
+            color: var(--parl-navy);
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .form-group label i { color: var(--parl-sapphire); font-size: 0.78rem; }
+        .form-control {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            border: 1.5px solid #D1D9E6;
+            border-radius: 8px;
+            font-size: 0.93rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--parl-navy);
+            background: #FAFBFD;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .form-control:focus {
+            border-color: var(--parl-sapphire);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%231A3A6B' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 0.75rem) center;
+            padding-right: 2.5rem;
+        }
+        .form-control[disabled], .form-control[readonly] {
+            background: #EEF1F7;
+            color: #6B7A99;
+            cursor: not-allowed;
+        }
+        /* SECTION DIVIDER */
+        .section-divider {
+            border: none;
+            border-top: 1.5px solid #EEF1F7;
+            margin: 1.25rem 0;
+        }
+        /* BADGE */
+        .field-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: rgba(37,99,235,0.07);
+            color: var(--parl-sapphire);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        /* BUTTONS */
+        .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.65rem 1.4rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--parl-royal), var(--parl-sapphire));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(37,99,235,0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37,99,235,0.35);
+        }
+        .btn-gold {
+            background: linear-gradient(135deg, var(--parl-gold), var(--parl-gold-light));
+            color: var(--parl-navy);
+            box-shadow: 0 4px 16px rgba(212,175,55,0.25);
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(212,175,55,0.4);
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(239,68,68,0.2);
+        }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        .btn-outline {
+            background: transparent;
+            color: var(--parl-navy);
+            border: 1.5px solid #D1D9E6;
+        }
+        .btn-outline:hover { border-color: var(--parl-sapphire); color: var(--parl-sapphire); }
+        /* ALERT */
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .alert.show { display: flex; }
+        .alert-success { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+        .alert-danger { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+        /* PASSWORD GRID */
+        .password-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+        .password-grid .full-width { grid-column: 1 / -1; }
+        /* DANGER ZONE */
+        .danger-box {
+            background: #FFF5F5;
+            border: 1.5px solid #FECACA;
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+        }
+        .danger-box p { color: #991B1B; font-size: 0.88rem; margin: 0 0 1rem; }
+        /* RESPONSIVE */
+        @media (max-width: 640px) {
+            .profile-hero { flex-direction: column; text-align: center; gap: 1rem; }
+            .form-grid { grid-template-columns: 1fr; }
+            .password-grid { grid-template-columns: 1fr; }
+            .top-bar-nav { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="top-bar">
+    <a href="/dashboard" class="top-bar-brand">
+        <div class="brand-icon"><i class="fas fa-landmark"></i></div>
+        <div>
+            <div class="brand-text">Yoshlar Parlamenti</div>
+            <div class="brand-sub">O'zbekiston Respublikasi</div>
+        </div>
+    </a>
+    <div class="top-bar-nav">
+        <a href="/dashboard"><i class="fas fa-home"></i> Bosh sahifa</a>
+        <a href="/profile_settings" class="active"><i class="fas fa-user-cog"></i> Profil</a>
+        <a href="/logout"><i class="fas fa-sign-out-alt"></i> Chiqish</a>
+    </div>
+</nav>
+
+<div class="page-container">
+
+    <!-- ALERT BOXES -->
+    <div class="alert alert-success" id="alertSuccess"><i class="fas fa-check-circle"></i> <span id="alertSuccessText"></span></div>
+    <div class="alert alert-danger" id="alertDanger"><i class="fas fa-exclamation-circle"></i> <span id="alertDangerText"></span></div>
+
+    <!-- PROFILE HERO -->
+    <div class="profile-hero">
+        <div class="profile-avatar-lg" id="avatarDisplay">?</div>
+        <div class="profile-hero-info">
+            <h1 id="heroName">Yuklanmoqda...</h1>
+            <p id="heroDistrict"></p>
+            <div class="user-id-badge" id="heroUserId"><i class="fas fa-id-badge"></i> <span></span></div>
+        </div>
+    </div>
+
+    <!-- CARD: ASOSIY MA'LUMOTLAR -->
+    <div class="profile-card">
+        <h2 class="card-title"><i class="fas fa-user-edit"></i> Asosiy ma'lumotlar</h2>
+        <form id="profileForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> To'liq ism</label>
+                    <input type="text" id="full_name" name="full_name" class="form-control" required placeholder="Ism Familiya Otasining ismi">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-birthday-cake"></i> Yosh</label>
+                    <input type="number" id="age" name="age" class="form-control" min="14" max="35" placeholder="Yosh">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Hudud (o'zgartirib bo'lmaydi)</label>
+                    <input type="text" id="district_display" class="form-control" disabled>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-id-card"></i> ID raqam (o'zgartirib bo'lmaydi)</label>
+                    <input type="text" id="user_id_display" class="form-control" disabled>
+                </div>
+            </div>
+
+            <hr class="section-divider">
+            <p style="font-size:0.82rem;color:#5B6A82;margin:0 0 1rem;"><span class="field-badge"><i class="fas fa-star"></i> Parlament tuzilmasi</span> &nbsp; Quyidagi ma'lumotlar sizning qaysi guruh va qo'mitaga tegishli ekanligingizni ko'rsatadi.</p>
+
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label><i class="fas fa-users"></i> Yoshlar guruhi</label>
+                    <select id="yoshlar_guruhi" name="yoshlar_guruhi" class="form-control">
+                        <option value="">— Tanlang —</option>
+                        <option value="O'zLiDeP yoshlar guruhi">O'zLiDeP yoshlar guruhi</option>
+                        <option value="Milliy tiklanish yoshlar guruhi">Milliy tiklanish yoshlar guruhi</option>
+                        <option value="Xalq demokratik partiyasi yoshlar guruhi">Xalq demokratik partiyasi yoshlar guruhi</option>
+                        <option value="Adolat partiyasi yoshlar guruhi">Adolat partiyasi yoshlar guruhi</option>
+                        <option value="Ekologik partiya yoshlar guruhi">Ekologik partiya yoshlar guruhi</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label><i class="fas fa-gavel"></i> Qo'mita</label>
+                    <select id="qomita" name="qomita" class="form-control">
+                        <option value="">— Tanlang —</option>
+                        <option value="1. Yoshlarning huquqiy savodxonligini oshirish va vatanparvarlik ruhida tarbiyalash masalalari qo'mitasi">1. Huquqiy savodxonlik va vatanparvarlik tarbiyasi qo'mitasi</option>
+                        <option value="2. Yoshlar bandligi, sog'liqni saqlash va ijtimoiy masalalar qo'mitasi">2. Bandlik, sog'liqni saqlash va ijtimoiy masalalar qo'mitasi</option>
+                        <option value="3. Innovatsion rivojlanish, sun'iy intellekt va axborot texnologiyalari masalalari qo'mitasi">3. Innovatsion rivojlanish, sun'iy intellekt va IT qo'mitasi</option>
+                        <option value="4. Yoshlar tadbirkorligi, raqobatni rivojlantirish va sanoat masalalari qo'mitasi">4. Tadbirkorlik, raqobat va sanoat masalalari qo'mitasi</option>
+                        <option value="5. Fan, ta'lim, madaniyat, turizm va sport masalalari qo'mitasi">5. Fan, ta'lim, madaniyat, turizm va sport qo'mitasi</option>
+                        <option value="6. Ekologiya va atrof-muhitni muhofaza qilish masalalari qo'mitasi">6. Ekologiya va atrof-muhit qo'mitasi</option>
+                        <option value="7. Xalqaro ishlar va yoshlar tashkilotlari bilan hamkorlik qilish masalalari qo'mitasi">7. Xalqaro ishlar va yoshlar tashkilotlari hamkorligi qo'mitasi</option>
+                        <option value="8. Fuqarolik jamiyati va volontyorlik faoliyatini rivojlantirish masalalari qo'mitasi">8. Fuqarolik jamiyati va volontyorlik qo'mitasi</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Saqlash</button>
+                <a href="/dashboard" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Orqaga</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- CARD: XAVFSIZLIK -->
+    <div class="profile-card gold-accent">
+        <h2 class="card-title gold"><i class="fas fa-lock"></i> Parolni o'zgartirish</h2>
+        <form id="passwordForm">
+            <div class="password-grid">
+                <div class="form-group full-width">
+                    <label><i class="fas fa-key"></i> Joriy parol</label>
+                    <input type="password" id="current_password" class="form-control" placeholder="Joriy parolingiz">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Yangi parol</label>
+                    <input type="password" id="new_password" class="form-control" minlength="6" placeholder="Kamida 6 belgi">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Yangi parolni tasdiqlang</label>
+                    <input type="password" id="confirm_password" class="form-control" placeholder="Takrorlang">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button type="submit" class="btn btn-gold"><i class="fas fa-key"></i> Parolni yangilash</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- CARD: XAVFLI ZONA -->
+    <div class="profile-card danger-accent">
+        <h2 class="card-title red"><i class="fas fa-exclamation-triangle"></i> Xavfli sozlamalar</h2>
+        <div class="danger-box">
+            <p><i class="fas fa-warning"></i> Hisobingizni o'chirish ortga qaytarib bo'lmaydi. Barcha ma'lumotlaringiz o'chib ketadi.</p>
+            <button class="btn btn-danger" onclick="showDeleteConfirmation()"><i class="fas fa-trash"></i> Hisobni o'chirish</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const YOSHLAR_GURUHI_OPTIONS = [
+        "O'zLiDeP yoshlar guruhi",
+        "Milliy tiklanish yoshlar guruhi",
+        "Xalq demokratik partiyasi yoshlar guruhi",
+        "Adolat partiyasi yoshlar guruhi",
+        "Ekologik partiya yoshlar guruhi"
+    ];
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadProfileData();
+        setupFormListeners();
+    });
+
+    async function loadProfileData() {
+        try {
+            const response = await fetch('/api/user/profile');
+            const data = await response.json();
+            if (data.success) {
+                const p = data.profile;
+                document.getElementById('full_name').value = p.full_name || '';
+                document.getElementById('age').value = p.age || '';
+                document.getElementById('district_display').value = p.district || '';
+                document.getElementById('user_id_display').value = p.user_id || '';
+
+                const yg = document.getElementById('yoshlar_guruhi');
+                if (p.yoshlar_guruhi) yg.value = p.yoshlar_guruhi;
+
+                const qm = document.getElementById('qomita');
+                if (p.qomita) qm.value = p.qomita;
+
+                // Hero section
+                document.getElementById('heroName').textContent = p.full_name || '—';
+                document.getElementById('heroDistrict').textContent = p.district || '';
+                document.getElementById('heroUserId').querySelector('span').textContent = p.user_id || '';
+
+                if (p.full_name) {
+                    const initials = p.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+                    document.getElementById('avatarDisplay').textContent = initials;
+                }
+            }
+        } catch (e) {
+            showAlert('danger', 'Profil ma\'lumotlarini yuklashda xatolik yuz berdi.');
+        }
+    }
+
+    function setupFormListeners() {
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = {
+                full_name: document.getElementById('full_name').value.trim(),
+                age: document.getElementById('age').value,
+                yoshlar_guruhi: document.getElementById('yoshlar_guruhi').value,
+                qomita: document.getElementById('qomita').value
+            };
+            await updateProfile(formData);
+        });
+
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const cur = document.getElementById('current_password').value;
+            const nw = document.getElementById('new_password').value;
+            const cf = document.getElementById('confirm_password').value;
+            if (!cur || !nw || !cf) { showAlert('danger', 'Barcha parol maydonlarini to\'ldiring'); return; }
+            if (nw !== cf) { showAlert('danger', 'Yangi parollar mos kelmadi'); return; }
+            if (nw.length < 6) { showAlert('danger', 'Yangi parol kamida 6 belgidan iborat bo\'lishi kerak'); return; }
+            await updatePassword({ current_password: cur, new_password: nw });
+        });
+    }
+
+    async function updateProfile(data) {
+        try {
+            const r = await fetch('/api/user/update_profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await r.json();
+            if (result.success) {
+                showAlert('success', 'Profil muvaffaqiyatli yangilandi!');
+                document.getElementById('heroName').textContent = data.full_name;
+                document.getElementById('avatarDisplay').textContent = data.full_name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+            } else {
+                showAlert('danger', 'Xatolik: ' + result.error);
+            }
+        } catch(e) {
+            showAlert('danger', 'Server bilan bog\'lanishda xatolik.');
+        }
+    }
+
+    async function updatePassword(data) {
+        try {
+            const r = await fetch('/api/user/reset_password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await r.json();
+            if (result.success) {
+                showAlert('success', 'Parol muvaffaqiyatli yangilandi!');
+                document.getElementById('current_password').value = '';
+                document.getElementById('new_password').value = '';
+                document.getElementById('confirm_password').value = '';
+            } else {
+                showAlert('danger', 'Xatolik: ' + result.error);
+            }
+        } catch(e) {
+            showAlert('danger', 'Server bilan bog\'lanishda xatolik.');
+        }
+    }
+
+    function showAlert(type, msg) {
+        const el = document.getElementById(type === 'success' ? 'alertSuccess' : 'alertDanger');
+        const txt = document.getElementById(type === 'success' ? 'alertSuccessText' : 'alertDangerText');
+        txt.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 4000);
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function showDeleteConfirmation() {
+        if (confirm('Rostdan ham hisobingizni o\'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo\'lmaydi.')) {
+            fetch('/api/user/delete_account', { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) { window.location.href = '/'; }
+                    else { showAlert('danger', 'Xatolik: ' + result.error); }
+                });
+        }
+    }
+</script>
+</body>
+</html>

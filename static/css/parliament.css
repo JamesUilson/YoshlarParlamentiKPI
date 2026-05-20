@@ -1,0 +1,450 @@
+/* ================================================================ */
+/*  YOSHLAR PARLAMENTI — Global Brend Uslubi                        */
+/*  Maqsad: Front-Ofisdan ajralib turadigan unikal parlament dizayn */
+/* ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ============ PARLAMENT RANG SXEMASI ============ */
+:root {
+    /* Asosiy ranglar */
+    --parl-navy:       #0A1628;   /* Chuqur ko'k-qora — asosiy fon */
+    --parl-royal:      #1A3A6B;   /* Qirollik ko'k */
+    --parl-sapphire:   #2563EB;   /* Safir ko'k — primary */
+    --parl-sky:        #60A5FA;   /* Ochiq ko'k */
+    --parl-gold:       #D4AF37;   /* Oltin — aksent */
+    --parl-gold-light: #F0D060;   /* Ochiq oltin */
+    --parl-cream:      #F8F5EE;   /* Krem fon */
+    --parl-white:      #FFFFFF;
+
+    /* CSS o'zgaruvchilarni qayta yozish */
+    --primary:         var(--parl-sapphire);
+    --primary-dark:    var(--parl-royal);
+    --bg-body:         var(--parl-cream);
+    --bg-card:         var(--parl-white);
+    --text-main:       var(--parl-navy);
+    --text-muted:      #5B6A82;
+    --shadow:          0 8px 32px rgba(10,22,40,0.12);
+    --border-radius:   16px;
+    --transition:      all 0.3s cubic-bezier(.4,0,.2,1);
+
+    /* Login sahifasi o'zgaruvchilari */
+    --primary-color:   var(--parl-royal);
+    --secondary-color: var(--parl-sapphire);
+    --light-color:     var(--parl-cream);
+    --text-color:      var(--parl-navy);
+    --text-light:      #5B6A82;
+    --box-shadow:      0 4px 20px rgba(10,22,40,0.1);
+}
+
+/* Tungi rejim */
+body.dark-mode {
+    --bg-body:    #0A1628;
+    --bg-card:    #0F2040;
+    --text-main:  #EEF2FF;
+    --text-muted: #94A3B8;
+    --shadow:     0 8px 32px rgba(0,0,0,0.4);
+    --primary:    #60A5FA;
+    --primary-dark: #2563EB;
+
+    --primary-color:   #1A3A6B;
+    --secondary-color: #60A5FA;
+    --light-color:     #0F2040;
+    --dark-color:      #EEF2FF;
+    --text-color:      #EEF2FF;
+    --text-light:      #94A3B8;
+}
+
+/* ============ TIPOGRAFIYA ============ */
+body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+h1, h2, h3,
+.section-header h2,
+.hero h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* ============ LOGO / HEADER ============ */
+.logo-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--parl-royal), var(--parl-sapphire));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.logo-text p {
+    font-size: 0.72rem;
+    color: var(--parl-gold);
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+/* Nav hover accent */
+.nav-links a:hover {
+    color: var(--parl-sapphire);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.btn-login {
+    background: linear-gradient(135deg, var(--parl-royal), var(--parl-sapphire)) !important;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+}
+
+.btn-login:hover {
+    box-shadow: 0 6px 24px rgba(37,99,235,0.45);
+    transform: translateY(-2px);
+}
+
+/* ============ HERO ============ */
+.hero {
+    background: linear-gradient(160deg, var(--parl-navy) 0%, var(--parl-royal) 60%, #1E4D9B 100%);
+    color: var(--parl-white);
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Dekorativ naqsh */
+.hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(212,175,55,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(96,165,250,0.15) 0%, transparent 40%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    z-index: 0;
+}
+
+.hero .hero-slideshow {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.hero .hero-slideshow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        160deg,
+        rgba(10,22,40,0.72) 0%,
+        rgba(26,58,107,0.65) 50%,
+        rgba(10,22,40,0.80) 100%
+    );
+    z-index: 2;
+}
+
+.hero .container {
+    position: relative;
+    z-index: 3;
+    padding: 8rem 2rem 6rem;
+}
+
+.hero .container h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    font-weight: 900;
+    color: var(--parl-white);
+    text-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+}
+
+.hero .container p {
+    color: rgba(255,255,255,0.88);
+    font-size: 1.15rem;
+    line-height: 1.8;
+    max-width: 720px;
+    margin: 0 auto 2.5rem;
+}
+
+/* Hero gold aktsent chiziq */
+.hero-accent-line {
+    display: inline-block;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--parl-gold), var(--parl-gold-light));
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+}
+
+/* ============ TUGMALAR ============ */
+.btn-primary {
+    background: linear-gradient(135deg, var(--parl-gold), var(--parl-gold-light));
+    color: var(--parl-navy) !important;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(212,175,55,0.35);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(212,175,55,0.5);
+    background: linear-gradient(135deg, var(--parl-gold-light), var(--parl-gold));
+}
+
+.btn-outline {
+    border: 2px solid rgba(255,255,255,0.7);
+    color: white !important;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+}
+
+.btn-outline:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: white;
+    transform: translateY(-3px);
+}
+
+/* ============ STATS BAR ============ */
+.stats-bar {
+    border-top: 4px solid var(--parl-gold);
+    position: relative;
+}
+
+.stats-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--parl-royal), var(--parl-gold), var(--parl-sapphire));
+}
+
+.stat-item h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--parl-sapphire);
+}
+
+/* ============ SECTION HEADERS ============ */
+.section-header h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--parl-navy);
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+}
+
+.section-header h2::after {
+    background: linear-gradient(90deg, var(--parl-gold), var(--parl-sapphire));
+    height: 3px;
+    width: 70px;
+}
+
+body.dark-mode .section-header h2 {
+    color: #EEF2FF;
+}
+
+/* ============ KARTALAR ============ */
+.card::before {
+    background: linear-gradient(90deg, var(--parl-gold), var(--parl-sapphire));
+}
+
+.card-icon {
+    color: var(--parl-sapphire);
+}
+
+.card:hover {
+    box-shadow: 0 16px 48px rgba(37,99,235,0.15);
+    border-color: var(--parl-gold);
+}
+
+.role-card {
+    border-bottom: 4px solid var(--parl-gold);
+}
+
+.role-card:hover {
+    border-bottom-color: var(--parl-sapphire);
+}
+
+/* ============ NEWS / YANGILIKLAR ============ */
+.news-date {
+    color: var(--parl-gold) !important;
+    font-weight: 700;
+}
+
+.news-title {
+    font-family: 'Playfair Display', serif;
+    color: var(--parl-navy);
+}
+
+body.dark-mode .news-title {
+    color: #EEF2FF;
+}
+
+.read-more {
+    color: var(--parl-sapphire) !important;
+}
+
+/* ============ PLAN CARDS ============ */
+.plan-icon {
+    background: linear-gradient(135deg, var(--parl-royal), var(--parl-sapphire));
+}
+
+.plan-month {
+    color: var(--parl-gold);
+}
+
+.plan-badge {
+    background: linear-gradient(135deg, var(--parl-gold), var(--parl-gold-light));
+    color: var(--parl-navy);
+    font-weight: 700;
+}
+
+/* ============ ALOQA ============ */
+.contact-item i {
+    color: var(--parl-gold);
+}
+
+.contact-item a:hover {
+    color: var(--parl-gold);
+}
+
+/* ============ FOOTER ============ */
+.main-footer {
+    background: linear-gradient(160deg, var(--parl-navy) 0%, var(--parl-royal) 100%);
+    color: var(--parl-white);
+    border-top: 3px solid var(--parl-gold);
+}
+
+.main-footer::before {
+    background: linear-gradient(90deg, var(--parl-gold), var(--parl-sapphire), var(--parl-gold));
+}
+
+.license-text {
+    color: var(--parl-gold) !important;
+}
+
+/* ============ SCROLLBAR ============ */
+::-webkit-scrollbar-thumb {
+    background: var(--parl-sapphire);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--parl-royal);
+}
+
+/* ============ PARLIAMENT EMBLEM (SVG inline background) ============ */
+.parl-emblem-bg {
+    position: absolute;
+    right: -80px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 500px;
+    height: 500px;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='95' stroke='%23ffffff' stroke-width='3' fill='none'/%3E%3Ccircle cx='100' cy='100' r='75' stroke='%23ffffff' stroke-width='2' fill='none'/%3E%3Cpolygon points='100,20 112,60 155,60 122,83 134,123 100,100 66,123 78,83 45,60 88,60' stroke='%23ffffff' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: contain;
+    pointer-events: none;
+}
+
+/* ============ THEME TOGGLE ============ */
+.theme-toggle {
+    background: linear-gradient(135deg, var(--parl-royal), var(--parl-sapphire));
+    box-shadow: 0 4px 16px rgba(37,99,235,0.35);
+}
+
+/* ============ LOGIN SAHIFASI ============ */
+.login-left {
+    background: linear-gradient(160deg, var(--parl-navy) 0%, var(--parl-royal) 60%, #1E4D9B 100%) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(circle at 30% 70%, rgba(212,175,55,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 70% 20%, rgba(96,165,250,0.1) 0%, transparent 40%);
+    z-index: 0;
+}
+
+.login-left > * {
+    position: relative;
+    z-index: 1;
+}
+
+.login-logo-main .logo-text h1 {
+    font-size: 1.6rem;
+    background: linear-gradient(135deg, #FFFFFF, var(--parl-gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.login-logo-main .logo-text p {
+    color: var(--parl-gold-light);
+}
+
+/* ============ DASHBOARD / INNER PAGES ============ */
+.dashboard-header {
+    background: linear-gradient(135deg, var(--parl-navy) 0%, var(--parl-royal) 100%) !important;
+    border-bottom: 3px solid var(--parl-gold);
+}
+
+.admin-header {
+    background: linear-gradient(135deg, var(--parl-navy) 0%, #1E4D9B 100%) !important;
+    border-bottom: 3px solid var(--parl-gold);
+}
+
+/* Sidebar faol elementi */
+.sidebar-menu li.active a,
+.sidebar-nav li.active a {
+    background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(212,175,55,0.1));
+    border-left: 3px solid var(--parl-gold);
+    color: var(--parl-sapphire);
+}
+
+/* Progress to'ldirgich */
+.progress-fill {
+    background: linear-gradient(90deg, var(--parl-sapphire), var(--parl-gold));
+}
+
+/* ============ RESPONSIV ============ */
+@media (max-width: 768px) {
+    .hero .container {
+        padding: 6rem 1.5rem 4rem;
+    }
+
+    .hero .container h1 {
+        font-size: 2rem;
+    }
+
+    .parl-emblem-bg {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero .container {
+        padding: 5rem 1rem 3rem;
+    }
+}
+
+/* ============ ANIMATSIYALAR ============ */
+@keyframes parlGlow {
+    0%, 100% { box-shadow: 0 0 20px rgba(212,175,55,0.2); }
+    50%       { box-shadow: 0 0 40px rgba(212,175,55,0.4); }
+}
+
+@keyframes parlFadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.section-header { animation: parlFadeUp 0.7s ease-out both; }
+.card           { animation: parlFadeUp 0.7s ease-out both; }
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+.card:nth-child(3) { animation-delay: 0.3s; }
+.card:nth-child(4) { animation-delay: 0.4s; }
