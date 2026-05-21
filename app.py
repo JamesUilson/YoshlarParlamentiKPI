@@ -2885,8 +2885,8 @@ def api_get_tasks():
                    u.full_name as assignee_name,
                    a.full_name as admin_name
             FROM user_tasks t
-            LEFT JOIN users u ON t.assigned_to = u.id
-            LEFT JOIN users a ON t.assigned_by = a.id
+            LEFT JOIN users u ON t.assigned_to = u.user_id
+            LEFT JOIN users a ON t.assigned_by = a.user_id
             ORDER BY t.created_at DESC
         ''')
         
