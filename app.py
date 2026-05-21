@@ -217,7 +217,7 @@ def init_db():
         try:
             c.execute('''INSERT OR IGNORE INTO users 
                         (user_id, password, full_name, district, age, role) 
-                        VALUES (?, ?, ?, ?, ?, ?)''', 
+                        VALUES (%s, %s, %s, %s, %s, %s)''', 
                       (user_id, password, full_name, district, age, role))
         except Exception as e:
             print(f"Foydalanuvchi qo'shishda xatolik {user_id}: {e}")
@@ -234,7 +234,7 @@ def init_db():
                         (user_id, month_year, event_count, material_count, 
                          message_count, safety_score, file_path, description,
                          challenges, suggestions, status, admin_comment) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
                       (user_id, month_year, event_count, material_count, message_count, safety_score, file_path, description, challenges, suggestions, status, admin_comment))
         except Exception as e:
             print(f"Hisobot qo'shishda xatolik {user_id}: {e}")
@@ -249,7 +249,7 @@ def init_db():
         try:
             c.execute('''INSERT OR IGNORE INTO tasks 
                         (title, description, created_by, created_date) 
-                        VALUES (?, ?, ?, ?)''',
+                        VALUES (%s, %s, %s, %s)''',
                       (title, description, created_by, created_date))
         except Exception as e:
             print(f"Topshiriq qo'shishda xatolik: {e}")
@@ -505,7 +505,7 @@ def submit_report():
                         (user_id, month_year, event_count, material_count, 
                          message_count, safety_score, file_path, description,
                          challenges, suggestions) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
                      (session['user_id'], month_year, event_count, material_count,
                       message_count, safety_score, filename, description,
                       challenges, suggestions))
@@ -554,7 +554,7 @@ def api_dashboard_stats():
         # 4. Faol topshiriqlar soni
         c.execute('''
             SELECT COUNT(*) FROM user_tasks 
-            WHERE (assigned_to = ? OR assigned_to = 'all') 
+            WHERE (assigned_to = %s OR assigned_to = 'all') 
             AND status IN ('pending', 'in_progress')
         ''', (user_id,))
         active_tasks = c.fetchone()[0]
@@ -563,7 +563,7 @@ def api_dashboard_stats():
         c.execute('''
             SELECT month_year, status, submitted_date 
             FROM reports 
-            WHERE user_id = ? 
+            WHERE user_id = %s 
             ORDER BY submitted_date DESC 
             LIMIT 5
         ''', (user_id,))
@@ -574,7 +574,7 @@ def api_dashboard_stats():
             SELECT ut.*, u.full_name as admin_name
             FROM user_tasks ut
             LEFT JOIN users u ON ut.assigned_by = u.user_id
-            WHERE (ut.assigned_to = ? OR ut.assigned_to = 'all')
+            WHERE (ut.assigned_to = %s OR ut.assigned_to = 'all')
             AND ut.status IN ('pending', 'in_progress')
             ORDER BY ut.created_at DESC 
             LIMIT 5
@@ -641,7 +641,7 @@ def api_user_profile():
             FROM users u
             LEFT JOIN reports r ON u.user_id = r.user_id
             LEFT JOIN user_tasks ut ON (ut.assigned_to = u.user_id OR ut.assigned_to = 'all')
-            WHERE u.user_id = ?
+            WHERE u.user_id = %s
             GROUP BY u.user_id
         ''', (user_id,))
         
@@ -680,13 +680,13 @@ def api_dashboard_data():
         # 1. Reyting grafik uchun ma'lumotlar (oxirgi 6 oy)
         c.execute('''
             SELECT 
-                strftime('%Y-%m', submitted_date) as month,
+                to_char(submitted_date, 'YYYY-MM') as month,
                 COUNT(*) as report_count,
                 AVG(rt.total) as avg_rating
             FROM reports r
             LEFT JOIN ratings rt ON r.id = rt.report_id
-            WHERE r.user_id = ? AND r.submitted_date >= date('now', '-6 months')
-            GROUP BY strftime('%Y-%m', submitted_date)
+            WHERE r.user_id = %s AND r.submitted_date >= CURRENT_DATE - INTERVAL '6 months'
+            GROUP BY to_char(submitted_date, 'YYYY-MM')
             ORDER BY month
         ''', (user_id,))
         
@@ -704,7 +704,7 @@ def api_dashboard_data():
                 status,
                 COUNT(*) as count
             FROM user_tasks
-            WHERE assigned_to = ? OR assigned_to = 'all'
+            WHERE assigned_to = %s OR assigned_to = 'all'
             GROUP BY status
         ''', (user_id,))
         
@@ -725,7 +725,7 @@ def api_dashboard_data():
                 safety_score,
                 status
             FROM reports
-            WHERE user_id = ?
+            WHERE user_id = %s
             ORDER BY submitted_date DESC
             LIMIT 6
         ''', (user_id,))
@@ -809,9 +809,9 @@ def api_dashboard_notifications():
         c.execute('''
             SELECT COUNT(*) 
             FROM user_tasks 
-            WHERE (assigned_to = ? OR assigned_to = 'all') 
+            WHERE (assigned_to = %s OR assigned_to = 'all') 
             AND status = 'pending'
-            AND created_at >= datetime('now', '-7 days')
+            AND created_at >= CURRENT_TIMESTAMP
         ''', (user_id,))
         new_tasks = c.fetchone()[0]
         if new_tasks > 0:
@@ -825,9 +825,9 @@ def api_dashboard_notifications():
         c.execute('''
             SELECT COUNT(*) 
             FROM reports 
-            WHERE user_id = ? 
+            WHERE user_id = %s 
             AND status = 'rated'
-            AND submitted_date >= datetime('now', '-7 days')
+            AND submitted_date >= CURRENT_TIMESTAMP
         ''', (user_id,))
         rated_reports = c.fetchone()[0]
         if rated_reports > 0:
@@ -841,9 +841,9 @@ def api_dashboard_notifications():
         c.execute('''
             SELECT COUNT(*) 
             FROM user_tasks 
-            WHERE (assigned_to = ? OR assigned_to = 'all')
+            WHERE (assigned_to = %s OR assigned_to = 'all')
             AND status IN ('pending', 'in_progress')
-            AND deadline BETWEEN date('now') AND date('now', '+3 days')
+            AND deadline BETWEEN CURRENT_DATE AND CURRENT_DATE
         ''', (user_id,))
         upcoming_deadlines = c.fetchone()[0]
         if upcoming_deadlines > 0:
@@ -952,8 +952,8 @@ def api_update_profile():
         yoshlar_guruhi = data.get('yoshlar_guruhi', '')
         qomita = data.get('qomita', '')
         c.execute('''UPDATE users 
-                    SET full_name = ?, age = ?, yoshlar_guruhi = ?, qomita = ?
-                    WHERE user_id = ?''',
+                    SET full_name = %s, age = %s, yoshlar_guruhi = %s, qomita = %s
+                    WHERE user_id = %s''',
                   (data['full_name'], data['age'], yoshlar_guruhi, qomita, user_id))
         
         # Session ma'lumotlarini yangilash
@@ -1104,7 +1104,7 @@ def api_reports_history():
                 rt.admin_comment as rating_comment
             FROM reports r
             LEFT JOIN ratings rt ON r.id = rt.report_id
-            WHERE r.user_id = ?
+            WHERE r.user_id = %s
             ORDER BY r.submitted_date DESC
         ''', (user_id,))
         
@@ -1129,7 +1129,7 @@ def api_reports_history():
                 AVG(rt.total) as avg_score
             FROM reports r
             LEFT JOIN ratings rt ON r.id = rt.report_id
-            WHERE r.user_id = ?
+            WHERE r.user_id = %s
         ''', (user_id,))
         
         stats = c.fetchone()
@@ -1274,7 +1274,7 @@ def api_user_tasks():
                 COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
                 COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as in_progress,
                 COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
-                COUNT(CASE WHEN deadline < date('now') AND status != 'completed' THEN 1 END) as overdue
+                COUNT(CASE WHEN deadline < CURRENT_DATE AND status != 'completed' THEN 1 END) as overdue
             FROM user_tasks ut
             WHERE {where_clause}
         ''', params)
@@ -1343,7 +1343,7 @@ def api_user_update_rating():
         c.execute('''
             SELECT rating, total_points, rated_count 
             FROM users 
-            WHERE user_id = ?
+            WHERE user_id = %s
         ''', (user_id,))
         
         user = c.fetchone()
@@ -1404,11 +1404,11 @@ def api_user_update_rating():
         # 5. Ma'lumotlarni yangilash
         c.execute('''
             UPDATE users 
-            SET rating = ?, 
-                total_points = ?,
-                rated_count = ?,
+            SET rating = %s, 
+                total_points = %s,
+                rated_count = %s,
                 last_rating_update = CURRENT_TIMESTAMP
-            WHERE user_id = ?
+            WHERE user_id = %s
         ''', (new_rating, total_points, rated_count, user_id))
         
         conn.commit()
@@ -1417,7 +1417,7 @@ def api_user_update_rating():
         c.execute('''
             INSERT INTO rating_history 
             (user_id, old_rating, new_rating, points, source_type, created_at)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
         ''', (user_id, current_rating, new_rating, points, source_type))
         
         conn.commit()
@@ -1564,7 +1564,7 @@ class RatingSystem:
                     SUM(CASE WHEN points > 0 THEN 1 ELSE 0 END) as positive_ratings,
                     SUM(CASE WHEN points < 0 THEN 1 ELSE 0 END) as negative_ratings
                 FROM rating_history 
-                WHERE user_id = ?
+                WHERE user_id = %s
             ''', (user_id,))
             
             result = c.fetchone()
@@ -1600,7 +1600,7 @@ def api_user_complete_task(task_id):
         c.execute('''
             SELECT points, assigned_to, status 
             FROM user_tasks 
-            WHERE task_id = ?
+            WHERE task_id = %s
         ''', (task_id,))
         
         task = c.fetchone()
@@ -1619,10 +1619,10 @@ def api_user_complete_task(task_id):
         c.execute('''
             UPDATE user_tasks 
             SET status = 'completed',
-                completed_by = ?,
+                completed_by = %s,
                 completed_at = CURRENT_TIMESTAMP,
-                rating_given = ?
-            WHERE task_id = ?
+                rating_given = %s
+            WHERE task_id = %s
         ''', (user_id, admin_rating, task_id))
         
         # 4. Reytingni hisoblash (admin bahosi asosida)
@@ -1676,13 +1676,13 @@ def api_user_rating_statistics():
         # 1. Reyting tarixi
         c.execute('''
             SELECT 
-                strftime('%Y-%m', r.submitted_date) as month,
+                to_char(r.submitted_date, 'YYYY-MM') as month,
                 rt.total as rating,
                 COUNT(r.id) as report_count
             FROM reports r
             LEFT JOIN ratings rt ON r.id = rt.report_id
-            WHERE r.user_id = ? AND r.status = 'rated' AND rt.total IS NOT NULL
-            GROUP BY strftime('%Y-%m', r.submitted_date)
+            WHERE r.user_id = %s AND r.status = 'rated' AND rt.total IS NOT NULL
+            GROUP BY to_char(r.submitted_date, 'YYYY-MM')
             ORDER BY month DESC
             LIMIT 12
         ''', (user_id,))
@@ -1705,12 +1705,12 @@ def api_user_rating_statistics():
                 # completed_by ustuni bor versiya
                 c.execute('''
                     SELECT 
-                        strftime('%Y-%m', completed_at) as month,
+                        to_char(completed_at, 'YYYY-MM') as month,
                         SUM(points) as points_earned,
                         COUNT(*) as tasks_completed
                     FROM user_tasks
-                    WHERE completed_by = ? AND status = 'completed'
-                    GROUP BY strftime('%Y-%m', completed_at)
+                    WHERE completed_by = %s AND status = 'completed'
+                    GROUP BY to_char(completed_at, 'YYYY-MM')
                     ORDER BY month DESC
                     LIMIT 12
                 ''', (user_id,))
@@ -1718,13 +1718,13 @@ def api_user_rating_statistics():
                 # completed_by ustuni yo'q versiya
                 c.execute('''
                     SELECT 
-                        strftime('%Y-%m', created_at) as month,
+                        to_char(created_at, 'YYYY-MM') as month,
                         SUM(points) as points_earned,
                         COUNT(*) as tasks_completed
                     FROM user_tasks
                     WHERE status = 'completed'
-                        AND (assigned_to = ? OR assigned_to = 'all')
-                    GROUP BY strftime('%Y-%m', created_at)
+                        AND (assigned_to = %s OR assigned_to = 'all')
+                    GROUP BY to_char(created_at, 'YYYY-MM')
                     ORDER BY month DESC
                     LIMIT 12
                 ''', (user_id,))
@@ -1761,7 +1761,7 @@ def api_user_rating_statistics():
                     COUNT(*) as total_users,
                     AVG(rating) as district_avg
                 FROM users
-                WHERE role = 'user' AND district = ? AND rating IS NOT NULL
+                WHERE role = 'user' AND district = %s AND rating IS NOT NULL
             ''', (user_info[0],))
             
             stats = c.fetchone()
@@ -1774,8 +1774,8 @@ def api_user_rating_statistics():
                 SELECT COUNT(*) as better_users
                 FROM users
                 WHERE role = 'user' 
-                    AND district = ? 
-                    AND rating > ?
+                    AND district = %s 
+                    AND rating > %s
                     AND rating IS NOT NULL
             ''', (user_info[0], user_info[1] or 0))
             
@@ -1787,12 +1787,12 @@ def api_user_rating_statistics():
         c.execute('''
             SELECT 
                 rating,
-                (SELECT COUNT(*) FROM reports WHERE user_id = ?) as report_count,
+                (SELECT COUNT(*) FROM reports WHERE user_id = %s) as report_count,
                 (SELECT COUNT(*) FROM user_tasks 
                  WHERE status = 'completed' 
-                 AND (assigned_to = ? OR assigned_to = 'all')) as task_count
+                 AND (assigned_to = %s OR assigned_to = 'all')) as task_count
             FROM users 
-            WHERE user_id = ?
+            WHERE user_id = %s
         ''', (user_id, user_id, user_id))
         
         user_stats_result = c.fetchone()
@@ -1802,7 +1802,7 @@ def api_user_rating_statistics():
             SELECT AVG(rt.total)
             FROM reports r
             LEFT JOIN ratings rt ON r.id = rt.report_id
-            WHERE r.user_id = ? AND r.status = 'rated' AND rt.total IS NOT NULL
+            WHERE r.user_id = %s AND r.status = 'rated' AND rt.total IS NOT NULL
         ''', (user_id,))
         
         avg_score_result = c.fetchone()
@@ -1944,7 +1944,7 @@ def api_user_get_report(report_id):
             FROM reports r
             LEFT JOIN users u ON r.user_id = u.user_id
             LEFT JOIN ratings rt ON r.id = rt.report_id
-            WHERE r.id = ? AND r.user_id = ?
+            WHERE r.id = %s AND r.user_id = %s
         ''', (report_id, user_id))
         
         report = c.fetchone()
@@ -1989,7 +1989,7 @@ def api_user_get_task(task_id):
                 u.full_name as admin_name
             FROM user_tasks ut
             LEFT JOIN users u ON ut.assigned_by = u.user_id
-            WHERE ut.task_id = ? AND (ut.assigned_to = ? OR ut.assigned_to = 'all')
+            WHERE ut.task_id = %s AND (ut.assigned_to = %s OR ut.assigned_to = 'all')
         ''', (task_id, user_id))
         
         task = c.fetchone()
@@ -2147,7 +2147,7 @@ def api_fix_tables():
                     INSERT OR REPLACE INTO user_tasks 
                     (task_id, title, description, assigned_to, assigned_by, deadline, 
                      points, task_type, priority, status, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', %s)
                 ''', (
                     task['task_id'], task['title'], task['description'],
                     task['assigned_to'], task['assigned_by'], task['deadline'],
@@ -2524,7 +2524,7 @@ def api_get_users():
 #                     AVG(ur.rating) as avg_rating
 #                 FROM users u
 #                 LEFT JOIN user_ratings ur ON u.id = ur.user_id
-#                 WHERE u.role = 'user' AND u.district = ?
+#                 WHERE u.role = 'user' AND u.district = %s
 #                 GROUP BY u.district
 #             ''', (admin_district,))
         
@@ -2832,8 +2832,8 @@ def import_excel():
                     # Yangilash
                     cursor.execute('''
                         UPDATE users 
-                        SET full_name = ?, district = ?, age = ?, phone = ?, role = ?
-                        WHERE id = ?
+                        SET full_name = %s, district = %s, age = %s, phone = %s, role = %s
+                        WHERE id = %s
                     ''', (full_name, district, age, phone, role, user_id))
                     updated += 1
                 else:
@@ -2843,13 +2843,13 @@ def import_excel():
                     
                     cursor.execute('''
                         INSERT INTO users (id, full_name, district, age, phone, role, password, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
                     ''', (user_id, full_name, district, age, phone, role, hashed_password))
                     
                     # Reyting qo'shish
                     cursor.execute('''
                         INSERT INTO user_ratings (user_id, rating, updated_at)
-                        VALUES (?, ?, datetime('now'))
+                        VALUES (%s, %s, CURRENT_TIMESTAMP)
                     ''', (user_id, initial_rating))
                     
                     added += 1
@@ -3037,7 +3037,7 @@ def dashboard_stats():
         cursor.execute('''
             SELECT COUNT(*) 
             FROM reports 
-            WHERE strftime('%Y-%m', submitted_date) = strftime('%Y-%m', 'now')
+            WHERE to_char(submitted_date, 'YYYY-MM') = to_char(CURRENT_DATE, 'YYYY-MM')
         ''')
         stats['monthly_reports'] = cursor.fetchone()[0] or 0
         
@@ -3247,13 +3247,13 @@ def api_rating_stats_v2():
         # 3. Oylik reyting o'zgarishi
         c.execute('''
             SELECT 
-                strftime('%Y-%m', submitted_date) as month,
+                to_char(submitted_date, 'YYYY-MM') as month,
                 AVG(rt.total) as avg_rating,
                 COUNT(*) as report_count
             FROM reports r
             LEFT JOIN ratings rt ON r.id = rt.report_id
             WHERE r.status = 'rated' AND rt.total IS NOT NULL
-            GROUP BY strftime('%Y-%m', submitted_date)
+            GROUP BY to_char(submitted_date, 'YYYY-MM')
             ORDER BY month DESC
             LIMIT 6
         ''')
@@ -3359,7 +3359,7 @@ def api_tasks_list_v2():
         today = datetime.now().strftime('%Y-%m-%d')
         c.execute('''
             SELECT COUNT(*) FROM user_tasks 
-            WHERE deadline < ? AND status NOT IN ('completed', 'cancelled')
+            WHERE deadline < %s AND status NOT IN ('completed', 'cancelled')
         ''', (today,))
         overdue_tasks = c.fetchone()[0] or 0
         
@@ -3486,7 +3486,7 @@ def api_admin_create_task_v2():
             INSERT INTO user_tasks 
             (task_id, title, description, assigned_to, assigned_by, 
              deadline, points, priority, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'pending', CURRENT_TIMESTAMP)
         ''', (
             task_id,
             data['title'].strip(),
@@ -3616,7 +3616,7 @@ def api_rate_report_post(report_id):
         # Baholashni saqlash
         c.execute('''INSERT INTO ratings 
                     (report_id, faollik, tashabbus, intizom, tasir, total, admin_comment) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)''',
                  (report_id, faollik, tashabbus, intizom, tasir, total, comment))
         
         # Hisobot holatini yangilash
@@ -3624,11 +3624,11 @@ def api_rate_report_post(report_id):
                  (comment, report_id))
         
         # Foydalanuvchi reytingini yangilash
-        c.execute('''SELECT user_id FROM reports WHERE id = ?''', (report_id,))
+        c.execute('''SELECT user_id FROM reports WHERE id = %s''', (report_id,))
         user_id_result = c.fetchone()
         if user_id_result:
             user_id = user_id_result[0]
-            c.execute('''UPDATE users SET rating = rating + ? WHERE user_id = ?''', 
+            c.execute('''UPDATE users SET rating = rating + %s WHERE user_id = %s''', 
                      (total, user_id))
         
         conn.commit()
@@ -3767,16 +3767,16 @@ def api_rating_dashboard():
         # 4. OYLIK REYTING O'ZGARISHI
         c.execute('''
             SELECT 
-                strftime('%Y-%m', r.submitted_date) as month,
+                to_char(r.submitted_date, 'YYYY-MM') as month,
                 COUNT(DISTINCT r.user_id) as user_count,
                 AVG(rt.total) as avg_rating,
                 COUNT(*) as report_count
             FROM reports r
             LEFT JOIN ratings rt ON r.id = rt.report_id
             WHERE r.status = 'rated' 
-                AND r.submitted_date >= date('now', '-6 months')
+                AND r.submitted_date >= CURRENT_DATE - INTERVAL '6 months'
                 AND rt.total IS NOT NULL
-            GROUP BY strftime('%Y-%m', r.submitted_date)
+            GROUP BY to_char(r.submitted_date, 'YYYY-MM')
             ORDER BY month ASC
         ''')
         
@@ -3814,7 +3814,7 @@ def api_rating_dashboard():
         for i in range(0, 21, 2):  # 0-20, har 2 ballda
             c.execute('''
                 SELECT COUNT(*) FROM users 
-                WHERE role = 'user' AND rating >= ? AND rating < ?
+                WHERE role = 'user' AND rating >= %s AND rating < %s
             ''', (i, i+2))
             count_result = c.fetchone()
             count = count_result[0] if count_result else 0
@@ -4009,7 +4009,7 @@ def api_recreate_user_tasks():
                 INSERT INTO user_tasks 
                 (task_id, title, description, assigned_to, assigned_by, 
                  deadline, points, task_type, priority, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', CURRENT_TIMESTAMP)
             ''', task)
         
         conn.commit()
@@ -4494,7 +4494,7 @@ def generate_test_ratings():
                 district,
                 ROUND(RANDOM() * 20) as current_rating,
                 ROUND(RANDOM() * 20) as last_week_rating,
-                datetime('now')
+                CURRENT_TIMESTAMP
             FROM users
             WHERE role = 'user'
             LIMIT 10
@@ -4541,11 +4541,11 @@ def api_chart_data():
         # 2. Oylik hisobotlar soni
         c.execute('''
             SELECT 
-                strftime('%Y-%m', submitted_date) as month,
+                to_char(submitted_date, 'YYYY-MM') as month,
                 COUNT(*) as report_count
             FROM reports
-            WHERE submitted_date >= date('now', '-6 months')
-            GROUP BY strftime('%Y-%m', submitted_date)
+            WHERE submitted_date >= CURRENT_DATE - INTERVAL '6 months'
+            GROUP BY to_char(submitted_date, 'YYYY-MM')
             ORDER BY month
         ''')
         monthly_data = c.fetchall()
@@ -4666,7 +4666,7 @@ def api_create_task():
         c.execute('''INSERT INTO user_tasks 
                     (task_id, title, description, assigned_to, assigned_by, 
                      deadline, points, task_type, priority, file_path) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
                  (task_id, data['title'], data.get('description', ''),
                   data['assigned_to'], session['user_id'],
                   data['deadline'], int(data.get('points', 5)),
@@ -4789,7 +4789,7 @@ def complete_task(task_id):
         cursor.execute("""
             UPDATE tasks 
             SET status = 'completed', 
-                completed_at = datetime('now')
+                completed_at = CURRENT_TIMESTAMP
             WHERE task_id = %s
         """, (task_id,))
         
@@ -5115,10 +5115,11 @@ def api_generate_test_logs():
             action, action_text = random.choice(test_actions)
             details = f"Test log - {action_text}"
             
+            days_offset = f"{random.randint(0, 30)} days"
             c.execute('''
                 INSERT INTO system_logs (user_id, action, details, timestamp)
-                VALUES (?, ?, ?, datetime('now', ?))
-            ''', (user, action, details, f'-{random.randint(0, 30)} days'))
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP - CAST(%s AS INTERVAL))
+            ''', (user, action, details, days_offset))
         
         conn.commit()
         conn.close()
@@ -5271,9 +5272,9 @@ def api_process_excel():
                     # Yangilash
                     c.execute('''
                         UPDATE users 
-                        SET full_name = ?, district = ?, age = ?, phone = ?, 
-                            role = ?, rating = ?, password = ?
-                        WHERE user_id = ?
+                        SET full_name = %s, district = %s, age = %s, phone = %s, 
+                            role = %s, rating = %s, password = %s
+                        WHERE user_id = %s
                     ''', (full_name, district, age, phone, role, 
                           initial_rating, hashed_password, user_id))
                 else:
@@ -5282,7 +5283,7 @@ def api_process_excel():
                         INSERT INTO users 
                         (user_id, password, full_name, district, age, 
                          phone, role, rating, joined_date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ''', (user_id, hashed_password, full_name, district, age,
                           phone, role, initial_rating, datetime.now().date()))
                 
@@ -5451,7 +5452,7 @@ def generate_test_tasks():
         for task in test_tasks:
             cursor.execute("""
                 INSERT INTO tasks_new (title, description, assigned_to, deadline, points, task_type, status, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, 'pending', datetime('now'))
+                VALUES (%s, %s, %s, %s, %s, %s, 'pending', CURRENT_TIMESTAMP)
             """, task)
         
         conn.commit()
@@ -5693,7 +5694,7 @@ def api_rate_report(report_id):
         # Baholashni saqlash
         c.execute('''INSERT INTO ratings 
                     (report_id, faollik, tashabbus, intizom, tasir, total, admin_comment) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)''',
                  (report_id, faollik, tashabbus, intizom, tasir, total, comment))
         
         # Hisobot holatini yangilash
@@ -5701,10 +5702,10 @@ def api_rate_report(report_id):
                  (comment, report_id))
         
         # Foydalanuvchi reytingini yangilash
-        c.execute('''SELECT user_id FROM reports WHERE id = ?''', (report_id,))
+        c.execute('''SELECT user_id FROM reports WHERE id = %s''', (report_id,))
         user_id = c.fetchone()[0]
         
-        c.execute('''UPDATE users SET rating = rating + ? WHERE user_id = ?''', 
+        c.execute('''UPDATE users SET rating = rating + %s WHERE user_id = %s''', 
                  (total, user_id))
         
         conn.commit()
@@ -5912,7 +5913,7 @@ def api_tasks_list():
         today = datetime.now().strftime('%Y-%m-%d')
         c.execute('''
             SELECT COUNT(*) FROM user_tasks 
-            WHERE deadline < ? AND status NOT IN ('completed', 'cancelled')
+            WHERE deadline < %s AND status NOT IN ('completed', 'cancelled')
         ''', (today,))
         overdue_tasks = c.fetchone()[0] or 0
         
@@ -6109,7 +6110,7 @@ def get_single_task(task_id):
             FROM user_tasks t
             LEFT JOIN users u ON t.assigned_to = u.user_id
             LEFT JOIN users a ON t.assigned_by = a.user_id
-            WHERE t.id = ?
+            WHERE t.id = %s
         ''', (task_id,))
         
         task = cursor.fetchone()
@@ -6121,7 +6122,7 @@ def get_single_task(task_id):
                 FROM user_tasks t
                 LEFT JOIN users u ON t.assigned_to = u.user_id
                 LEFT JOIN users a ON t.assigned_by = a.user_id
-                WHERE t.task_id = ?
+                WHERE t.task_id = %s
             ''', (task_id,))
             task = cursor.fetchone()
         
@@ -6176,7 +6177,7 @@ def api_get_task_by_id(task_id):
             FROM user_tasks ut
             LEFT JOIN users u ON ut.assigned_by = u.user_id
             LEFT JOIN users u2 ON ut.assigned_to = u2.user_id
-            WHERE ut.task_id = ?
+            WHERE ut.task_id = %s
         ''', (task_id,))
         
         task = c.fetchone()
@@ -6293,7 +6294,7 @@ def api_view_report(report_id):
             FROM reports r
             LEFT JOIN users u ON r.user_id = u.user_id
             LEFT JOIN ratings rt ON r.id = rt.report_id
-            WHERE r.id = ?
+            WHERE r.id = %s
         ''', (report_id,))
         
         report = c.fetchone()
@@ -6356,7 +6357,7 @@ def api_approve_report(report_id):
         c.execute('''
             UPDATE users 
             SET rating = rating + 5 
-            WHERE user_id = (SELECT user_id FROM reports WHERE id = ?)
+            WHERE user_id = (SELECT user_id FROM reports WHERE id = %s)
         ''', (report_id,))
         
         conn.commit()
@@ -6608,7 +6609,7 @@ def get_recent_logs(limit=10):
             SELECT timestamp, user_id, action, details 
             FROM system_logs 
             ORDER BY timestamp DESC 
-            LIMIT ?
+            LIMIT %s
         ''', (limit,))
         logs = cursor.fetchall()
         conn.close()
@@ -6676,7 +6677,7 @@ def profile():
     c.execute('''SELECT r.*, rt.total, rt.admin_comment 
                  FROM reports r 
                  LEFT JOIN ratings rt ON r.id = rt.report_id 
-                 WHERE r.user_id = ? 
+                 WHERE r.user_id = %s 
                  ORDER BY r.submitted_date DESC''', (session['user_id'],))
     reports_history = c.fetchall()
     
@@ -6696,7 +6697,7 @@ def profile():
 #                  rt.faollik, rt.tashabbus, rt.intizom, rt.tasir
 #                  FROM reports r 
 #                  LEFT JOIN ratings rt ON r.id = rt.report_id 
-#                  WHERE r.user_id = ? 
+#                  WHERE r.user_id = %s 
 #                  ORDER BY r.submitted_date DESC''', (session['user_id'],))
 #     reports = c.fetchall()
     
@@ -6838,7 +6839,7 @@ def api_add_user():
         c.execute('''
             INSERT INTO users 
             (user_id, password, full_name, district, age, role, rating, phone, joined_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, date('now'))
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE)
         ''', (user_id, hashed_password, full_name, district, age, role, initial_rating, phone))
         
         conn.commit()
@@ -6921,8 +6922,8 @@ def api_import_excel():
                         # Yangilash
                         c.execute('''
                             UPDATE users 
-                            SET full_name=?, district=?, age=?, phone=?, role=?, rating=?
-                            WHERE user_id=?
+                            SET full_name=%s, district=%s, age=%s, phone=%s, role=%s, rating=%s
+                            WHERE user_id=%s
                         ''', (full_name, district, age, phone, role, initial_rating, user_id))
                         updated += 1
                 else:
@@ -6933,7 +6934,7 @@ def api_import_excel():
                     c.execute('''
                         INSERT INTO users 
                         (user_id, password, full_name, district, age, phone, role, rating, joined_date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, date('now'))
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE)
                     ''', (user_id, hashed_password, full_name, district, age, phone, role, initial_rating))
                     added += 1
                 
@@ -7310,15 +7311,15 @@ def api_edit_task(task_id):
         
         # Topshiriqni yangilash
         c.execute('''UPDATE user_tasks 
-                    SET title = ?,
-                        description = ?,
-                        assigned_to = ?,
-                        deadline = ?,
-                        points = ?,
-                        task_type = ?,
-                        priority = ?,
-                        status = ?
-                    WHERE task_id = ?
+                    SET title = %s,
+                        description = %s,
+                        assigned_to = %s,
+                        deadline = %s,
+                        points = %s,
+                        task_type = %s,
+                        priority = %s,
+                        status = %s
+                    WHERE task_id = %s
                 ''', (
                     data['title'],
                     data.get('description', ''),
@@ -7581,7 +7582,7 @@ def safe_log_action(user_id, action, details):
         
         # Log yozish
         c.execute('''INSERT INTO system_logs (user_id, action, details) 
-                     VALUES (?, ?, ?)''', (user_id or 'unknown', action, details))
+                     VALUES (%s, %s, %s)''', (user_id or 'unknown', action, details))
         
         conn.commit()
         conn.close()
@@ -7706,7 +7707,7 @@ def add_points_to_user(user_id):
         # Log yozish
         cursor.execute('''
             INSERT INTO rating_logs (user_id, points, reason, task_id, added_by, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
         ''', (user_id, points, reason, task_id, session.get('user_id'), 
               datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         
@@ -7885,7 +7886,7 @@ def log_action(user_id, action, details):
         
         c.execute('''
             INSERT INTO system_logs (user_id, action, details)
-            VALUES (?, ?, ?)
+            VALUES (%s, %s, %s)
         ''', (user_id, action, details))
         
         conn.commit()
