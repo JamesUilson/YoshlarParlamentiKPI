@@ -318,11 +318,13 @@ def inject_common_variables():
     )
 
 def get_db():
-    """PostgreSQL ulanish olish"""
+    """PostgreSQL ulanish olish with autocommit to prevent aborted transactions"""
     url = app.config.get('DATABASE_URL', '')
     if not url:
         raise RuntimeError('DATABASE_URL environment variable is not set')
-    return psycopg2.connect(url)
+    conn = psycopg2.connect(url)
+    conn.autocommit = True
+    return conn
 
 # Automatic Database Initialization
 with app.app_context():
@@ -1450,7 +1452,7 @@ def update_tables_with_rating():
         c = conn.cursor()
         
         # 1. users jadvaliga yangi ustunlar
-        c.execute("PRAGMA table_info(users)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'users'")
         user_columns = [col[1] for col in c.fetchall()]
         
         # total_points - barcha ballar yig'indisi
@@ -1693,7 +1695,7 @@ def api_user_rating_statistics():
         # 2. Topshiriq statistikasi - completed_by ustuni borligini tekshirish
         try:
             # completed_by ustuni borligini tekshirish
-            c.execute("PRAGMA table_info(user_tasks)")
+            c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
             columns = [col[1] for col in c.fetchall()]
             
             if 'completed_by' in columns:
@@ -2023,7 +2025,7 @@ def api_user_get_task(task_id):
 #         c = conn.cursor()
         
 #         # user_tasks jadvalining ustunlarini tekshirish
-#         c.execute("PRAGMA table_info(user_tasks)")
+#         c.execute(\"SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'\")
 #         columns = [col[1] for col in c.fetchall()]
         
 #         # Agar completed_at ustuni yo'q bo'lsa, qo'shamiz
@@ -2065,17 +2067,17 @@ def api_test_tables():
         results = {}
         
         # 1. user_tasks jadvali
-        c.execute("PRAGMA table_info(user_tasks)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
         user_tasks_columns = c.fetchall()
         results['user_tasks'] = [col[1] for col in user_tasks_columns]
         
         # 2. users jadvali
-        c.execute("PRAGMA table_info(users)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'users'")
         users_columns = c.fetchall()
         results['users'] = [col[1] for col in users_columns]
         
         # 3. reports jadvali
-        c.execute("PRAGMA table_info(reports)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'reports'")
         reports_columns = c.fetchall()
         results['reports'] = [col[1] for col in reports_columns]
         
@@ -2172,7 +2174,7 @@ def update_user_tasks_table():
         c = conn.cursor()
         
         # Avval jadval mavjud ustunlarini tekshirish
-        c.execute("PRAGMA table_info(user_tasks)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
         existing_columns = [col[1] for col in c.fetchall()]
         
         print(f"🔍 user_tasks jadvalining mavjud ustunlari: {existing_columns}")
@@ -2260,7 +2262,7 @@ def update_user_tasks_table():
         conn.commit()
         
         # Test uchun bir nechta ustunlarni tekshirish
-        c.execute("PRAGMA table_info(user_tasks)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
         final_columns = [col[1] for col in c.fetchall()]
         print(f"✅ Yakuniy ustunlar: {final_columns}")
         
@@ -2287,7 +2289,7 @@ def update_tables():
         c = conn.cursor()
         
         # users jadvali ustunlarini tekshirish
-        c.execute("PRAGMA table_info(users)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'users'")
         users_columns = [col[1] for col in c.fetchall()]
         
         # phone ustuni
@@ -3076,11 +3078,9 @@ def dashboard_stats():
         
         # 6. Database hajmi
         try:
-            cursor.execute("PRAGMA page_size")
-            page_size = cursor.fetchone()[0]
-            cursor.execute("PRAGMA page_count")
-            page_count = cursor.fetchone()[0]
-            stats['database_size'] = round((page_size * page_count) / (1024 * 1024), 2)  # MB
+            cursor.execute("SELECT pg_database_size(current_database())")
+            db_size_bytes = cursor.fetchone()[0]
+            stats['database_size'] = round(db_size_bytes / (1024 * 1024), 2)  # MB
         except:
             stats['database_size'] = 0
         
@@ -3326,7 +3326,7 @@ def api_tasks_list_v2():
         c = conn.cursor()
         
         # Avval user_tasks jadvalini tekshirish
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_tasks'")
+        c.execute("SELECT name FROM information_schema.tables WHERE table_schema='public' AND name='user_tasks'")
         if not c.fetchone():
             return jsonify({
                 'success': False,
@@ -3454,7 +3454,7 @@ def api_admin_create_task_v2():
         c = conn.cursor()
         
         # user_tasks jadvalini tekshirish
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_tasks'")
+        c.execute("SELECT name FROM information_schema.tables WHERE table_schema='public' AND name='user_tasks'")
         if not c.fetchone():
             # Agar jadval yo'q bo'lsa, yaratish
             c.execute('''
@@ -3894,7 +3894,7 @@ def api_check_tables():
         c = conn.cursor()
         
         # user_tasks jadvali strukturasini tekshirish
-        c.execute("PRAGMA table_info(user_tasks)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
         user_tasks_columns = []
         for col in c.fetchall():
             user_tasks_columns.append({
@@ -3913,14 +3913,14 @@ def api_check_tables():
         sample_data = None
         if sample_row:
             sample_data = {}
-            c.execute("PRAGMA table_info(user_tasks)")
+            c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
             columns_info = c.fetchall()
             for i, col_info in enumerate(columns_info):
                 if i < len(sample_row):
                     sample_data[col_info[1]] = sample_row[i]
         
         # users jadvali
-        c.execute("PRAGMA table_info(users)")
+        c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'users'")
         users_columns = [col[1] for col in c.fetchall()]
         
         conn.close()
@@ -3951,7 +3951,7 @@ def api_recreate_user_tasks():
         try:
             c.execute("SELECT * FROM user_tasks")
             old_data = c.fetchall()
-            c.execute("PRAGMA table_info(user_tasks)")
+            c.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
             old_columns = [col[1] for col in c.fetchall()]
             print(f"📦 Eski ma'lumotlar saqlandi: {len(old_data)} qator")
         except:
@@ -4105,13 +4105,13 @@ def check_tables_command():
         c = conn.cursor()
         
         # Barcha jadvallarni olish
-        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        c.execute("SELECT name FROM information_schema.tables WHERE table_schema='public' AND name NOT LIKE 'sqlite_%'")
         tables = [row[0] for row in c.fetchall()]
         
         # Har bir jadval strukturasini olish
         table_info = {}
         for table in tables:
-            c.execute(f"PRAGMA table_info({table})")
+            c.execute(f"SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = '{table}'")
             columns = c.fetchall()
             table_info[table] = {
                 'columns': len(columns),
@@ -4336,8 +4336,8 @@ def api_get_ratings():
                         total_points INTEGER DEFAULT 0,
                         tasks_completed INTEGER DEFAULT 0,
                         reports_submitted INTEGER DEFAULT 0,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )''')
         
         # Foydalanuvchilar reytinglarini olish
@@ -4425,8 +4425,8 @@ def api_update_ratings():
                         total_points INTEGER DEFAULT 0,
                         tasks_completed INTEGER DEFAULT 0,
                         reports_submitted INTEGER DEFAULT 0,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )''')
         
         # Joriy haftalik reytinglarni saqlash
@@ -4478,7 +4478,7 @@ def generate_test_ratings():
                             district TEXT,
                             current_rating INTEGER,
                             last_week_rating INTEGER,
-                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )''')
         
         cursor.execute("""
@@ -4653,7 +4653,7 @@ def api_create_task():
                         status TEXT DEFAULT 'pending',
                         progress INTEGER DEFAULT 0,
                         file_path TEXT,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (assigned_by) REFERENCES users(user_id)
                     )''')
         
@@ -4858,7 +4858,7 @@ def table_structure():
         
         try:
             # Jadval maydonlarini olish
-            cursor.execute(f"PRAGMA table_info({table_name})")
+            cursor.execute(f"SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = '{table_name}'")
             columns = cursor.fetchall()
             
             # Jadval statistikasini olish
@@ -4866,7 +4866,7 @@ def table_structure():
             row_count = cursor.fetchone()[0]
             
             # Index ma'lumotlarini olish
-            cursor.execute(f"PRAGMA index_list({table_name})")
+            cursor.execute(f"SELECT indexname FROM pg_indexes WHERE tablename = ({table_name})")
             indexes = cursor.fetchall()
             
             conn.close()
@@ -4997,7 +4997,7 @@ def drop_table():
         cursor = conn.cursor()
         
         # Jadval mavjudligini tekshirish
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=%s", (table_name,))
+        cursor.execute("SELECT name FROM information_schema.tables WHERE table_schema='public' AND name=%s", (table_name,))
         if not cursor.fetchone():
             conn.close()
             return jsonify({
@@ -5441,7 +5441,7 @@ def generate_test_tasks():
                             points INTEGER,
                             task_type TEXT,
                             status TEXT,
-                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         )''')
         
         for task in test_tasks:
@@ -7034,20 +7034,21 @@ def api_optimize_database():
         c = conn.cursor()  # c o'zgaruvchisini aniqlaymiz
         
         # Oldin bazaning hajmini olamiz
-        c.execute("PRAGMA page_size")
-        page_size = c.fetchone()[0]
+        c.execute("SELECT pg_database_size(current_database())")
+        db_size_bytes = c.fetchone()[0]
+        old_size = db_size_bytes / 1024  # KB da
         
-        c.execute("PRAGMA page_count")
-        old_page_count = c.fetchone()[0]
-        old_size = (page_size * old_page_count) / 1024  # KB da
-        
-        # VACUUM komandasi - SQLite da bazani optimizatsiya qilish
-        c.execute('VACUUM')
+        # PostgreSQL-da VACUUM uchun alohida tranzaksiya kerak, autocommit yoqilgan
+        # shuning uchun vacuum to'g'ridan to'g'ri ishlaydi
+        try:
+            c.execute('VACUUM')
+        except:
+            pass  # Vercel serverless-da vacuum uchun ruxsat bo'lmasligi mumkin, shuning uchun pass qilamiz
         
         # Yangi hajmini olamiz
-        c.execute("PRAGMA page_count")
-        new_page_count = c.fetchone()[0]
-        new_size = (page_size * new_page_count) / 1024  # KB da
+        c.execute("SELECT pg_database_size(current_database())")
+        new_db_size_bytes = c.fetchone()[0]
+        new_size = new_db_size_bytes / 1024  # KB da
         
         saved_space = old_size - new_size
         
@@ -7128,13 +7129,9 @@ def api_database_stats():
         
         # Baza hajmi
         try:
-            c.execute("PRAGMA page_size")
-            page_size = c.fetchone()[0]
-            
-            c.execute("PRAGMA page_count")
-            page_count = c.fetchone()[0]
-            
-            database_size_kb = (page_size * page_count) / 1024
+            c.execute("SELECT pg_database_size(current_database())")
+            db_size_bytes = c.fetchone()[0]
+            database_size_kb = db_size_bytes / 1024
         except:
             database_size_kb = 0
         
@@ -7489,12 +7486,12 @@ def api_import_database():
             
             # Barcha jadvallarni dump qilish
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+            cursor.execute("SELECT name FROM information_schema.tables WHERE table_schema='public' AND name NOT LIKE 'sqlite_%'")
             tables = cursor.fetchall()
             
             for table in tables:
                 table_name = table[0]
-                cursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name=%s", (table_name,))
+                cursor.execute(f"SELECT sql FROM information_schema.tables WHERE table_schema='public' AND name=%s", (table_name,))
                 create_table_sql = cursor.fetchone()
                 if create_table_sql:
                     f.write(create_table_sql[0] + ";\n\n")
@@ -7562,7 +7559,7 @@ def safe_log_action(user_id, action, details):
         c = conn.cursor()
         
         # Jadval mavjudligini tekshirish
-        c.execute('''SELECT name FROM sqlite_master 
+        c.execute('''SELECT name FROM information_schema.tables 
                      WHERE type='table' AND name='system_logs' ''')
         if not c.fetchone():
             # Agar jadval yo'q bo'lsa, yaratish
@@ -7747,7 +7744,7 @@ def get_tasks():
         tasks_list = []
         
         # Jadval ustunlarini aniqlash
-        cursor.execute("PRAGMA table_info(user_tasks)")
+        cursor.execute("SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = 'user_tasks'")
         task_columns = [col[1] for col in cursor.fetchall()]
         
         for task in tasks:
@@ -7795,7 +7792,7 @@ def api_export_database():
         cursor = conn.cursor()
         
         # Barcha jadvallarni olish
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        cursor.execute("SELECT name FROM information_schema.tables WHERE table_schema='public' AND name NOT LIKE 'sqlite_%'")
         tables = cursor.fetchall()
         
         # SQL dump yaratish
@@ -7807,7 +7804,7 @@ def api_export_database():
             sql_dump += f"\n-- Table: {table_name}\n"
             
             # Table schema
-            cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=%s", (table_name,))
+            cursor.execute("SELECT sql FROM information_schema.tables WHERE table_schema='public' AND name=%s", (table_name,))
             create_table_sql = cursor.fetchone()
             if create_table_sql:
                 sql_dump += create_table_sql[0] + ";\n\n"
@@ -7818,7 +7815,7 @@ def api_export_database():
             
             if rows:
                 # Ustun nomlarini olish
-                cursor.execute(f'PRAGMA table_info("{table_name}")')
+                cursor.execute(f"SELECT 0 as cid, column_name as name, data_type as type, 1 as notnull, NULL as dflt_value, 0 as pk FROM information_schema.columns WHERE table_name = '{table_name}'")
                 columns = cursor.fetchall()
                 column_names = [col[1] for col in columns]
                 
