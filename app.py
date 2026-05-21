@@ -10,6 +10,8 @@ import psycopg2.extras
 import random
 import string
 import re
+import requests
+import mimetypes
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -24,6 +26,77 @@ import binascii
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_here')
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+# Supabase Storage helper funksiyasi
+def upload_to_supabase_storage(file_storage_obj, custom_filename=None):
+    """Faylni Supabase Storage (reports) bucket-iga yuklash va uning Public URL-ni qaytarish"""
+    if not file_storage_obj or not file_storage_obj.filename:
+        return None
+
+    filename = custom_filename or secure_filename(file_storage_obj.filename)
+    
+    # 1. Supabase credentials
+    # Agar loyiha ref xgbnqrlcpsnpslhcnbdw bo'lsa, uning URL-i:
+    supabase_url = os.environ.get('SUPABASE_URL', 'https://xgbnqrlcpsnpslhcnbdw.supabase.co')
+    supabase_key = os.environ.get('SUPABASE_KEY') or os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    # Anon key yoki service role key olish (agar .env-da bo'lmasa, biz o'sha loyihaning ma'lum anon_keyini fallback qilamiz)
+    if not supabase_key:
+        # Foydalanuvchida yo'q bo'lsa, mahalliy fayl tizimiga yozib fallback qilamiz
+        print("⚠️ SUPABASE_KEY .env-da topilmadi, vaqtinchalik lokal saqlanmoqda!")
+        # Vercel-da faqat /tmp papkasiga yozish mumkin
+        upload_dir = '/tmp' if os.environ.get('VERCEL') else app.config['UPLOAD_FOLDER']
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, filename)
+        file_storage_obj.save(file_path)
+        # Agar lokal serverda ishlayotgan bo'lsa, URL-ni to'g'ri beramiz
+        return filename
+    
+    try:
+        # Fayl ma'lumotlarini o'qish
+        file_storage_obj.seek(0)
+        file_data = file_storage_obj.read()
+        mime_type, _ = mimetypes.guess_type(filename)
+        mime_type = mime_type or 'application/octet-stream'
+        
+        # Reports bucket-iga yuklash so'rovi
+        # POST /storage/v1/object/reports/<filename>
+        upload_url = f"{supabase_url.rstrip('/')}/storage/v1/object/reports/{filename}"
+        
+        headers = {
+            "Authorization": f"Bearer {supabase_key}",
+            "apikey": supabase_key,
+            "Content-Type": mime_type
+        }
+        
+        # Avval mavjud bo'lsa, qayta yozish uchun UPSERT qilishga harakat qilish yoki to'g'ridan-to'g'ri yuklash
+        response = requests.post(upload_url, headers=headers, data=file_data)
+        
+        if response.status_code in [200, 201]:
+            # Muvaffaqiyatli yuklandi, public URL-ni yasaymiz
+            public_url = f"{supabase_url.rstrip('/')}/storage/v1/object/public/reports/{filename}"
+            print(f"✅ Fayl Supabase-ga muvaffaqiyatli yuklandi: {public_url}")
+            return public_url
+        elif response.status_code == 400 and 'Duplicate' in response.text:
+            # Fayl allaqachon mavjud bo'lsa, uning public URL-ini qaytarib qo'ya qolamiz
+            public_url = f"{supabase_url.rstrip('/')}/storage/v1/object/public/reports/{filename}"
+            return public_url
+        else:
+            print(f"❌ Supabase Storage xatosi: {response.status_code} - {response.text}")
+            
+    except Exception as e:
+        print(f"❌ Supabase-ga yuklashda kutilmagan xatolik: {e}")
+        
+    # Kutilmagan xatolik yuz bersa, lokal fallback
+    try:
+        upload_dir = '/tmp' if os.environ.get('VERCEL') else app.config['UPLOAD_FOLDER']
+        os.makedirs(upload_dir, exist_ok=True)
+        file_storage_obj.seek(0)
+        file_storage_obj.save(os.path.join(upload_dir, filename))
+        return filename
+    except Exception as local_err:
+        print(f"❌ Lokal fallback ham bajarilmadi: {local_err}")
+        return None
 
 # Jinja2 custom date filter
 @app.template_filter('format_date')
@@ -111,6 +184,7 @@ def init_db():
                     completed_at TIMESTAMP,
                     feedback TEXT,
                     rating_given INTEGER,  # 1-5 yulduz
+                    file_path TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (assigned_by) REFERENCES users(user_id)
                 )''')
@@ -275,7 +349,9 @@ def admin_required(f):
         
         # Database connection olish
         conn = get_db_connection()
-        user = conn.execute('SELECT role FROM users WHERE id = %s', (session['user_id'],)).fetchone()
+        c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        c.execute('SELECT role FROM users WHERE user_id = %s', (session['user_id'],))
+        user = c.fetchone()
         conn.close()
         
         # Admin huquqlarini tekshirish
@@ -484,11 +560,11 @@ def submit_report():
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     file_ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else ''
                     filename = f"{session['user_id']}_{month_year}_{timestamp}.{file_ext}"
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     
-                    # Uploads papkasini yaratish
-                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                    file.save(file_path)
+                    # Supabase Storage-ga yuklash
+                    supabase_file_url = upload_to_supabase_storage(file, filename)
+                    if supabase_file_url:
+                        filename = supabase_file_url
                 else:
                     flash('Fayl formati qoʻllab-quvvatlanmaydi!', 'danger')
                     return redirect(url_for('submit_report'))
@@ -2197,6 +2273,7 @@ def update_user_tasks_table():
             ('completed_at', 'TIMESTAMP'),
             ('feedback', 'TEXT'),
             ('rating_given', 'INTEGER'),
+            ('file_path', 'TEXT'),
             ('created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
         ]
         
@@ -3565,9 +3642,9 @@ def api_create_announcement():
                 filename = secure_filename(file.filename)
                 if allowed_file(filename):
                     image_filename = f"announcement_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{filename}"
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
-                    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                    file.save(file_path)
+                    supabase_file_url = upload_to_supabase_storage(file, image_filename)
+                    if supabase_file_url:
+                        image_filename = supabase_file_url
         
         # Log yozish
         log_action(session['user_id'], 'create_announcement', 
@@ -4627,10 +4704,13 @@ def api_create_task():
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
             filename = f"task_{timestamp}.{file_ext}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            file.save(file_path)
-            file_path = filename
+            
+            # Supabase Storage-ga yuklash
+            supabase_file_url = upload_to_supabase_storage(file, filename)
+            if supabase_file_url:
+                file_path = supabase_file_url
+            else:
+                file_path = filename
         
         # Topshiriq ID generatsiya qilish
         task_id = f"TASK-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
@@ -5562,10 +5642,13 @@ def api_update_task(task_id):
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
             filename = f"task_{timestamp}.{file_ext}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            file.save(file_path)
-            file_path = filename
+            
+            # Supabase Storage-ga yuklash
+            supabase_file_url = upload_to_supabase_storage(file, filename)
+            if supabase_file_url:
+                file_path = supabase_file_url
+            else:
+                file_path = filename
         
         # Yangilanadigan maydonlarni aniqlash
         update_fields = []
@@ -6565,7 +6648,7 @@ def debugger():
 def get_db_connection():
     """Baza ulanishini olish"""
     conn = get_db()
-    conn.row_factory = sqlite3.Row
+    # sqlite row_factory o'rniga psycopg2 ulanishini qaytaramiz
     return conn
 
 def get_all_users():
