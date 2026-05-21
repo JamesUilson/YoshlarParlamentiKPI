@@ -39,6 +39,13 @@ def format_date_filter(val):
 _db_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL', '')
 if _db_url.startswith('postgres://'):
     _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+
+# Secure connection setup (Vercel requirements)
+if _db_url:
+    if 'sslmode' not in _db_url:
+        separator = '&' if '?' in _db_url else '?'
+        _db_url = f"{_db_url}{separator}sslmode=require"
+
 app.config['DATABASE_URL'] = _db_url
 CORS(app)  # CORS ni yoqamiz
 
@@ -72,7 +79,7 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
     
-    # Foydalanuvchilar jadvali (TELEFON ustunini O'CHIRAMIZ yoki QO'SHAMIZ)
+    # 1. Foydalanuvchilar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
                     user_id TEXT UNIQUE,
@@ -85,7 +92,30 @@ def init_db():
                     joined_date DATE DEFAULT CURRENT_DATE,
                     last_login TIMESTAMP
                 )''')
-    # Baholash jadvali
+
+    # 2. Topshiriqlar jadvali (yangi)
+    c.execute('''CREATE TABLE IF NOT EXISTS user_tasks (
+                    id SERIAL PRIMARY KEY,
+                    task_id TEXT UNIQUE,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    assigned_to TEXT,  # "all" yoki user_id
+                    assigned_by TEXT,  # kim topshirgan
+                    deadline DATE,
+                    points INTEGER DEFAULT 5,
+                    task_type TEXT DEFAULT 'regular',
+                    priority TEXT DEFAULT 'medium',
+                    status TEXT DEFAULT 'pending',  # pending/in_progress/completed/cancelled
+                    progress INTEGER DEFAULT 0,  # 0-100%
+                    completed_by TEXT,
+                    completed_at TIMESTAMP,
+                    feedback TEXT,
+                    rating_given INTEGER,  # 1-5 yulduz
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (assigned_by) REFERENCES users(user_id)
+                )''')
+
+    # 3. Baholash jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS task_ratings (
                     id SERIAL PRIMARY KEY,
                     task_id TEXT,
@@ -97,13 +127,13 @@ def init_db():
                     creativity INTEGER DEFAULT 0,  # 0-10
                     total_score INTEGER DEFAULT 0,
                     comment TEXT,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (task_id) REFERENCES user_tasks(task_id),
                     FOREIGN KEY (rated_by) REFERENCES users(user_id),
                     FOREIGN KEY (rated_to) REFERENCES users(user_id)
                 )''')
 
-    # Monitoring jadvali
+    # 4. Monitoring jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS admin_monitoring (
                     id SERIAL PRIMARY KEY,
                     admin_id TEXT,
@@ -112,12 +142,11 @@ def init_db():
                     target_id TEXT,  # task_id yoki user_id
                     target_name TEXT,
                     details TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (admin_id) REFERENCES users(user_id)
                 )''')
 
-    
-    # Hisobotlar jadvali
+    # 5. Hisobotlar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS reports (
                     id SERIAL PRIMARY KEY,
                     user_id TEXT,
@@ -136,7 +165,7 @@ def init_db():
                     FOREIGN KEY (user_id) REFERENCES users(user_id)
                 )''')
     
-    # Baholar jadvali
+    # 6. Baholar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS ratings (
                     id SERIAL PRIMARY KEY,
                     report_id INTEGER,
@@ -149,53 +178,6 @@ def init_db():
                     rated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (report_id) REFERENCES reports(id)
                 )''')
-    
-    # Topshiriqlar jadvali (yangi)
-    c.execute('''CREATE TABLE IF NOT EXISTS user_tasks (
-                    id SERIAL PRIMARY KEY,
-                    task_id TEXT UNIQUE,
-                    title TEXT NOT NULL,
-                    description TEXT,
-                    assigned_to TEXT,  # "all" yoki user_id
-                    assigned_by TEXT,  # kim topshirgan
-                    deadline DATE,
-                    points INTEGER DEFAULT 5,
-                    task_type TEXT DEFAULT 'regular',
-                    priority TEXT DEFAULT 'medium',
-                    status TEXT DEFAULT 'pending',  # pending/in_progress/completed/cancelled
-                    progress INTEGER DEFAULT 0,  # 0-100%
-                    completed_by TEXT,
-                    completed_at DATETIME,
-                    feedback TEXT,
-                    rating_given INTEGER,  # 1-5 yulduz
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (assigned_by) REFERENCES users(user_id)
-                )''')
-
-    # Reytinglar jadvali (yangi)
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS user_tasks (
-            id SERIAL PRIMARY KEY,
-            task_id TEXT UNIQUE,
-            title TEXT NOT NULL,
-            description TEXT,
-            assigned_to TEXT,
-            assigned_by TEXT,
-            deadline DATE,
-            points INTEGER DEFAULT 5,
-            task_type TEXT DEFAULT 'regular',
-            priority TEXT DEFAULT 'medium',
-            status TEXT DEFAULT 'pending',
-            progress INTEGER DEFAULT 0,
-            completed_by TEXT,
-            completed_at TIMESTAMP,
-            feedback TEXT,
-            rating_given INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (assigned_by) REFERENCES users(user_id)
-        )
-    ''')
-    
     # SISTEM LOGLARI JADVALINI QO'SHAMIZ
     c.execute('''CREATE TABLE IF NOT EXISTS system_logs (
                     id SERIAL PRIMARY KEY,
@@ -215,9 +197,10 @@ def init_db():
     
     for user_id, password, full_name, district, age, role in test_users:
         try:
-            c.execute('''INSERT OR IGNORE INTO users 
+            c.execute('''INSERT INTO users 
                         (user_id, password, full_name, district, age, role) 
-                        VALUES (%s, %s, %s, %s, %s, %s)''', 
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (user_id) DO NOTHING''', 
                       (user_id, password, full_name, district, age, role))
         except Exception as e:
             print(f"Foydalanuvchi qo'shishda xatolik {user_id}: {e}")
@@ -230,12 +213,15 @@ def init_db():
     
     for user_id, month_year, event_count, material_count, message_count, safety_score, file_path, description, challenges, suggestions, status, admin_comment in test_reports:
         try:
-            c.execute('''INSERT OR IGNORE INTO reports 
-                        (user_id, month_year, event_count, material_count, 
-                         message_count, safety_score, file_path, description,
-                         challenges, suggestions, status, admin_comment) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
-                      (user_id, month_year, event_count, material_count, message_count, safety_score, file_path, description, challenges, suggestions, status, admin_comment))
+            # check if report already exists for this user and month to prevent duplicate test data
+            c.execute("SELECT id FROM reports WHERE user_id = %s AND month_year = %s", (user_id, month_year))
+            if not c.fetchone():
+                c.execute('''INSERT INTO reports 
+                            (user_id, month_year, event_count, material_count, 
+                             message_count, safety_score, file_path, description,
+                             challenges, suggestions, status, admin_comment) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                          (user_id, month_year, event_count, material_count, message_count, safety_score, file_path, description, challenges, suggestions, status, admin_comment))
         except Exception as e:
             print(f"Hisobot qo'shishda xatolik {user_id}: {e}")
     
@@ -247,10 +233,12 @@ def init_db():
     
     for title, description, created_by, created_date in test_tasks:
         try:
-            c.execute('''INSERT OR IGNORE INTO tasks 
-                        (title, description, created_by, created_date) 
-                        VALUES (%s, %s, %s, %s)''',
-                      (title, description, created_by, created_date))
+            c.execute("SELECT id FROM tasks WHERE title = %s", (title,))
+            if not c.fetchone():
+                c.execute('''INSERT INTO tasks 
+                            (title, description, created_by, created_date) 
+                            VALUES (%s, %s, %s, %s)''',
+                          (title, description, created_by, created_date))
         except Exception as e:
             print(f"Topshiriq qo'shishda xatolik: {e}")
     
@@ -335,6 +323,13 @@ def get_db():
     if not url:
         raise RuntimeError('DATABASE_URL environment variable is not set')
     return psycopg2.connect(url)
+
+# Automatic Database Initialization
+with app.app_context():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"⚠️ Database initialization failed at startup: {e}")
 
 # Asosiy marshrutlar
 @app.route('/')
