@@ -11,6 +11,7 @@ gunicorn
 
 # Ma'lumotlar bazasi
 SQLAlchemy==2.0.21
+psycopg2-binary==2.9.9
 
 # Parol va xavfsizlik
 bcrypt==4.0.1

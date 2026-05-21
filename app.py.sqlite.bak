@@ -1,6 +1,7 @@
 #app.py
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify, Response
+import sqlite3
 import os
 import psycopg2
 import psycopg2.extras
@@ -17,16 +18,18 @@ from flask_cors import CORS
 from functools import wraps
 import hashlib
 import binascii
+import os
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_here')
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['DATABASE'] = 'database.db'
 
-# PostgreSQL ulanish URL
-_db_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL', '')
-if _db_url.startswith('postgres://'):
-    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
-app.config['DATABASE_URL'] = _db_url
+# PostgreSQL yoki SQLite
+_pg_url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+if _pg_url and _pg_url.startswith('postgres://'):
+    _pg_url = _pg_url.replace('postgres://', 'postgresql://', 1)
+app.config['POSTGRES_URL'] = _pg_url
 CORS(app)  # CORS ni yoqamiz
 
 # Ruxsat berilgan fayl kengaytmalari
@@ -56,12 +59,12 @@ def allowed_file(filename):
 # Ma'lumotlar bazasini yaratish VA TEST MA'LUMOTLARNI QO'SHISH
 # 2. DATABASE INIT funksiyasini to'g'rilash (jadval strukturasini to'g'rilash):
 def init_db():
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
     # Foydalanuvchilar jadvali (TELEFON ustunini O'CHIRAMIZ yoki QO'SHAMIZ)
     c.execute('''CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT UNIQUE,
                     password TEXT,
                     full_name TEXT,
@@ -74,7 +77,7 @@ def init_db():
                 )''')
     # Baholash jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS task_ratings (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     task_id TEXT,
                     rated_by TEXT,  # kim baholadi
                     rated_to TEXT,  # kimga baho berildi
@@ -92,7 +95,7 @@ def init_db():
 
     # Monitoring jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS admin_monitoring (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     admin_id TEXT,
                     admin_name TEXT,
                     action_type TEXT,  # task_created/task_assigned/task_completed/report_rated
@@ -106,7 +109,7 @@ def init_db():
     
     # Hisobotlar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS reports (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     month_year TEXT,
                     event_count INTEGER DEFAULT 0,
@@ -125,7 +128,7 @@ def init_db():
     
     # Baholar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS ratings (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     report_id INTEGER,
                     faollik INTEGER,
                     tashabbus INTEGER,
@@ -139,7 +142,7 @@ def init_db():
     
     # Topshiriqlar jadvali (yangi)
     c.execute('''CREATE TABLE IF NOT EXISTS user_tasks (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     task_id TEXT UNIQUE,
                     title TEXT NOT NULL,
                     description TEXT,
@@ -162,7 +165,7 @@ def init_db():
     # Reytinglar jadvali (yangi)
     c.execute('''
         CREATE TABLE IF NOT EXISTS user_tasks (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             task_id TEXT UNIQUE,
             title TEXT NOT NULL,
             description TEXT,
@@ -185,7 +188,7 @@ def init_db():
     
     # SISTEM LOGLARI JADVALINI QO'SHAMIZ
     c.execute('''CREATE TABLE IF NOT EXISTS system_logs (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     action TEXT,
                     details TEXT,
@@ -274,7 +277,7 @@ def admin_required(f):
         
         # Database connection olish
         conn = get_db_connection()
-        user = conn.execute('SELECT role FROM users WHERE id = %s', (session['user_id'],)).fetchone()
+        user = conn.execute('SELECT role FROM users WHERE id = ?', (session['user_id'],)).fetchone()
         conn.close()
         
         # Admin huquqlarini tekshirish
@@ -317,11 +320,13 @@ def inject_common_variables():
     )
 
 def get_db():
-    """PostgreSQL ulanish olish"""
-    url = app.config.get('DATABASE_URL', '')
-    if not url:
-        raise RuntimeError('DATABASE_URL environment variable is not set')
-    return psycopg2.connect(url)
+    """Database connection olish — PostgreSQL yoki SQLite"""
+    pg = app.config.get('POSTGRES_URL')
+    if pg:
+        conn = psycopg2.connect(pg, cursor_factory=psycopg2.extras.RealDictCursor)
+        conn.autocommit = False
+        return conn
+    return sqlite3.connect(app.config['DATABASE'])
 
 # Asosiy marshrutlar
 @app.route('/')
@@ -336,9 +341,9 @@ def login():
         
         print(f"🔑 Login urinishi: ID={user_id}")  # Debug
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+        c.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
         user = c.fetchone()
         conn.close()
         
@@ -384,20 +389,20 @@ def dashboard():
         return redirect(url_for('admin_panel'))
     
     # Userlar uchun oddiy dashboard
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
     # Foydalanuvchining hisobotlari
-    c.execute("SELECT * FROM reports WHERE user_id = %s ORDER BY submitted_date DESC", (session['user_id'],))
+    c.execute("SELECT * FROM reports WHERE user_id = ? ORDER BY submitted_date DESC", (session['user_id'],))
     reports = c.fetchall()
     
     # Topshiriqlar
-    c.execute("SELECT * FROM user_tasks WHERE (assigned_to = %s OR assigned_to = 'all') AND status != 'completed' ORDER BY deadline ASC LIMIT 5", 
+    c.execute("SELECT * FROM user_tasks WHERE (assigned_to = ? OR assigned_to = 'all') AND status != 'completed' ORDER BY deadline ASC LIMIT 5", 
               (session['user_id'],))
     tasks = c.fetchall()
     
     # Reyting
-    c.execute("SELECT rating FROM users WHERE user_id = %s", (session['user_id'],))
+    c.execute("SELECT rating FROM users WHERE user_id = ?", (session['user_id'],))
     rating_result = c.fetchone()
     rating = rating_result[0] if rating_result else 0
     
@@ -417,7 +422,7 @@ def dashboard():
 #     if 'user_id' not in session or session.get('role') not in ['admin', 'debugger']:
 #         return redirect(url_for('login'))
     
-#     conn = get_db()
+#     conn = sqlite3.connect(app.config['DATABASE'])
 #     c = conn.cursor()
     
 #     # Statistikalar
@@ -484,7 +489,7 @@ def submit_report():
                     return redirect(url_for('submit_report'))
         
         # Ma'lumotlar bazasiga saqlash
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         try:
@@ -520,22 +525,22 @@ def api_dashboard_stats():
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
         
         # 1. Joriy reyting
-        c.execute("SELECT rating FROM users WHERE user_id = %s", (user_id,))
+        c.execute("SELECT rating FROM users WHERE user_id = ?", (user_id,))
         rating_result = c.fetchone()
         current_rating = rating_result[0] if rating_result else 0
         
         # 2. Topshirilgan hisobotlar soni
-        c.execute("SELECT COUNT(*) FROM reports WHERE user_id = %s", (user_id,))
+        c.execute("SELECT COUNT(*) FROM reports WHERE user_id = ?", (user_id,))
         total_reports = c.fetchone()[0]
         
         # 3. Baholangan hisobotlar soni
-        c.execute("SELECT COUNT(*) FROM reports WHERE user_id = %s AND status = 'rated'", (user_id,))
+        c.execute("SELECT COUNT(*) FROM reports WHERE user_id = ? AND status = 'rated'", (user_id,))
         rated_reports = c.fetchone()[0]
         
         # 4. Faol topshiriqlar soni
@@ -612,7 +617,7 @@ def api_user_profile():
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -659,7 +664,7 @@ def api_dashboard_data():
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -786,7 +791,7 @@ def api_dashboard_notifications():
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -862,10 +867,10 @@ def profile_settings():
     if session.get('role') in ['admin', 'debugger']:
         return redirect(url_for('admin_profile'))
     
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
-    c.execute("SELECT * FROM users WHERE user_id = %s", (session['user_id'],))
+    c.execute("SELECT * FROM users WHERE user_id = ?", (session['user_id'],))
     user = c.fetchone()
     
     regions = get_regions()
@@ -881,11 +886,11 @@ def admin_profile():
     if 'user_id' not in session or session.get('role') not in ['admin', 'debugger']:
         return redirect(url_for('login'))
     
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
     # Foydalanuvchi ma'lumotlari (tuple sifatida)
-    c.execute("SELECT * FROM users WHERE user_id = %s", (session['user_id'],))
+    c.execute("SELECT * FROM users WHERE user_id = ?", (session['user_id'],))
     user = c.fetchone()
     
     if not user:
@@ -893,7 +898,7 @@ def admin_profile():
         return redirect(url_for('admin_panel'))
     
     # Hisobotlar soni
-    c.execute("SELECT COUNT(*) FROM reports WHERE user_id = %s", (session['user_id'],))
+    c.execute("SELECT COUNT(*) FROM reports WHERE user_id = ?", (session['user_id'],))
     reports_count = c.fetchone()[0] or 0
     
     conn.close()
@@ -918,13 +923,13 @@ def api_update_profile():
             if field not in data:
                 return jsonify({'success': False, 'error': f'{field} maydoni talab qilinadi'})
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Parolni tekshirish (agar o'zgartirilishi kerak bo'lsa)
         if 'current_password' in data and 'new_password' in data:
             # Joriy parolni tekshirish
-            c.execute("SELECT password FROM users WHERE user_id = %s", (user_id,))
+            c.execute("SELECT password FROM users WHERE user_id = ?", (user_id,))
             result = c.fetchone()
             
             if not result or not check_password_hash(result[0], data['current_password']):
@@ -932,7 +937,7 @@ def api_update_profile():
             
             # Yangi parolni hash qilish
             hashed_password = generate_password_hash(data['new_password'])
-            c.execute("UPDATE users SET password = %s WHERE user_id = %s", 
+            c.execute("UPDATE users SET password = ? WHERE user_id = ?", 
                      (hashed_password, user_id))
         
         # Profil ma'lumotlarini yangilash
@@ -975,11 +980,11 @@ def api_user_reset_password():
         if 'current_password' not in data or 'new_password' not in data:
             return jsonify({'success': False, 'error': 'Barcha maydonlarni to\'ldiring'})
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Joriy parolni tekshirish
-        c.execute("SELECT password FROM users WHERE user_id = %s", (user_id,))
+        c.execute("SELECT password FROM users WHERE user_id = ?", (user_id,))
         result = c.fetchone()
         
         if not result or not check_password_hash(result[0], data['current_password']):
@@ -987,7 +992,7 @@ def api_user_reset_password():
         
         # Yangi parolni hash qilish
         hashed_password = generate_password_hash(data['new_password'])
-        c.execute("UPDATE users SET password = %s WHERE user_id = %s", 
+        c.execute("UPDATE users SET password = ? WHERE user_id = ?", 
                  (hashed_password, user_id))
         
         conn.commit()
@@ -1025,14 +1030,14 @@ def api_delete_admin_account():
         if user_id in ['debug001', 'admin001']:  # Asosiy adminlar
             return jsonify({'success': False, 'error': 'Asosiy admin akkauntini o\'chirish mumkin emas'})
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Foydalanuvchini o'chirish
-        c.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
+        c.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
         
         # Hisobotlarni o'chirish (ixtiyoriy)
-        c.execute("DELETE FROM reports WHERE user_id = %s", (user_id,))
+        c.execute("DELETE FROM reports WHERE user_id = ?", (user_id,))
         
         conn.commit()
         conn.close()
@@ -1065,7 +1070,7 @@ def api_reports_history():
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -1147,11 +1152,11 @@ def api_download_report(report_id):
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Hisobot mavjudligini tekshirish
-        c.execute('SELECT user_id, file_path FROM reports WHERE id = %s', (report_id,))
+        c.execute('SELECT user_id, file_path FROM reports WHERE id = ?', (report_id,))
         report = c.fetchone()
         
         if not report:
@@ -1190,7 +1195,7 @@ def api_user_tasks():
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -1200,17 +1205,17 @@ def api_user_tasks():
         priority_filter = request.args.get('priority', 'all')
         
         # Asosiy WHERE sharti
-        where_conditions = ['(ut.assigned_to = %s OR ut.assigned_to = "all")']
+        where_conditions = ['(ut.assigned_to = ? OR ut.assigned_to = "all")']
         params = [user_id]
         
         # Status filtri
         if status_filter != 'all':
-            where_conditions.append('ut.status = %s')
+            where_conditions.append('ut.status = ?')
             params.append(status_filter)
         
         # Priority filtri
         if priority_filter != 'all':
-            where_conditions.append('ut.priority = %s')
+            where_conditions.append('ut.priority = ?')
             params.append(priority_filter)
         
         where_clause = ' AND '.join(where_conditions)
@@ -1288,7 +1293,7 @@ def api_user_tasks():
         return jsonify({'success': False, 'error': str(e)})
 
 def is_task_overdue(deadline):
-    """Topshiriq muddati o'tganmi%s"""
+    """Topshiriq muddati o'tganmi?"""
     if not deadline:
         return False
     from datetime import datetime
@@ -1299,7 +1304,7 @@ def is_task_overdue(deadline):
         return False
 
 def get_days_left(deadline):
-    """Qancha kun qolgan%s"""
+    """Qancha kun qolgan?"""
     if not deadline:
         return None
     from datetime import datetime
@@ -1323,7 +1328,7 @@ def api_user_update_rating():
         points = data.get('points', 0)  # Yangi ball (+ yoki -)
         source_type = data.get('type', 'task')  # 'report' yoki 'task'
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. Foydalanuvchi ma'lumotlarini olish
@@ -1438,7 +1443,7 @@ def api_user_update_rating():
 def update_tables_with_rating():
     """Reyting tizimi uchun jadvallarni yangilash"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. users jadvaliga yangi ustunlar
@@ -1463,7 +1468,7 @@ def update_tables_with_rating():
         # 2. rating_history jadvalini yaratish
         c.execute('''
             CREATE TABLE IF NOT EXISTS rating_history (
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT NOT NULL,
                 old_rating REAL DEFAULT 0,
                 new_rating REAL DEFAULT 0,
@@ -1541,7 +1546,7 @@ class RatingSystem:
     def calculate_average_rating(user_id):
         """O'rtacha reytingni hisoblash (statistika uchun)"""
         try:
-            conn = get_db()
+            conn = sqlite3.connect(app.config['DATABASE'])
             c = conn.cursor()
             
             c.execute('''
@@ -1580,7 +1585,7 @@ def api_user_complete_task(task_id):
         user_id = session['user_id']
         admin_rating = data.get('rating', 0)  # Admin bergan ball (1-10)
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. Topshiriq ma'lumotlarini olish
@@ -1655,7 +1660,7 @@ def api_user_rating_statistics():
         # Avval jadvallarni yangilash
         update_tables()
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -1730,7 +1735,7 @@ def api_user_rating_statistics():
             task_stats = []
         
         # 3. Hudud statistikasi
-        c.execute("SELECT district, rating FROM users WHERE user_id = %s", (user_id,))
+        c.execute("SELECT district, rating FROM users WHERE user_id = ?", (user_id,))
         user_info = c.fetchone()
         
         district_stats = {
@@ -1847,31 +1852,31 @@ def help_page():
 def api_faq():
     faq_data = [
         {
-            'question': 'Hisobot qanday topshiriladi%s',
+            'question': 'Hisobot qanday topshiriladi?',
             'answer': 'Dashboardda "Hisobot topshirish" tugmasini bosing yoki yon paneldan "Hisobot topshirish" bo\'limiga o\'ting. Oyni, tadbirlar soni, materiallar soni va boshqa ma\'lumotlarni to\'ldiring, fayl yuklashingiz mumkin va "Yuborish" tugmasini bosing.'
         },
         {
-            'question': 'Hisobotim necha kunda baholanadi%s',
+            'question': 'Hisobotim necha kunda baholanadi?',
             'answer': 'Hisobotlaringiz odatda 3-7 ish kunida adminlar tomonidan baholanadi. Baholangan hisobotlarni "Hisobotlar tarixi" bo\'limida ko\'rishingiz mumkin.'
         },
         {
-            'question': 'Reyting qanday hisoblanadi%s',
+            'question': 'Reyting qanday hisoblanadi?',
             'answer': 'Reyting 20 ball tizimi asosida hisoblanadi. Hisobotlar 4 jihatdan baholanadi: Faollik, Tashabbuskorlik, Intizom va Ta\'sir. Har bir kategoriya 0-5 ballgacha baholanadi.'
         },
         {
-            'question': 'Topshiriq qanday bajariladi%s',
+            'question': 'Topshiriq qanday bajariladi?',
             'answer': '"Topshiriqlar" bo\'limidan topshiriqlaringizni ko\'rishingiz mumkin. Topshiriqni bajarganingizdan so\'ng, "Bajarildi" tugmasini bosib, topshiriqni bajarilgan deb belgilashingiz mumkin.'
         },
         {
-            'question': 'Parolni qanday o\'zgartirish mumkin%s',
+            'question': 'Parolni qanday o\'zgartirish mumkin?',
             'answer': '"Profil sozlamalari" bo\'limida "Xavfsizlik" qismida parolni o\'zgartirishingiz mumkin. Joriy parolni va yangi parolni kiritishingiz kerak.'
         },
         {
-            'question': 'Hisobotni yuklab olish mumkinmi%s',
+            'question': 'Hisobotni yuklab olish mumkinmi?',
             'answer': 'Ha, "Hisobotlar tarixi" bo\'limida har bir hisobot uchun "Yuklash" tugmasi mavjud. Bu siz yuklagan faylni yuklab olish uchun ishlatiladi.'
         },
         {
-            'question': 'Qanday qilib reytingimni oshirishim mumkin%s',
+            'question': 'Qanday qilib reytingimni oshirishim mumkin?',
             'answer': '1. Vaqtida hisobot topshirish\n2. Sifatli va to\'liq ma\'lumotlar berish\n3. Topshiriqlarni o\'z vaqtida bajarish\n4. Aktiv ishtirok etish'
         }
     ]
@@ -1911,7 +1916,7 @@ def api_user_get_report(report_id):
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -1965,7 +1970,7 @@ def api_user_get_task(task_id):
         return jsonify({'success': False, 'error': 'Kirish talab qilinadi'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         user_id = session['user_id']
@@ -2011,7 +2016,7 @@ def api_user_get_task(task_id):
 # def update_tables():
 #     """Mavjud jadval strukturasini yangilash"""
 #     try:
-#         conn = get_db()
+#         conn = sqlite3.connect(app.config['DATABASE'])
 #         c = conn.cursor()
         
 #         # user_tasks jadvalining ustunlarini tekshirish
@@ -2051,7 +2056,7 @@ def api_user_get_task(task_id):
 def api_test_tables():
     """Jadval strukturasini tekshirish"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         results = {}
@@ -2099,7 +2104,7 @@ def api_fix_tables():
         update_tables()
         
         # Test uchun bir nechta topshiriq qo'shamiz
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Test topshiriqlari
@@ -2160,7 +2165,7 @@ def api_fix_tables():
 def update_user_tasks_table():
     """user_tasks jadvalini to'liq yangilash"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Avval jadval mavjud ustunlarini tekshirish
@@ -2171,7 +2176,7 @@ def update_user_tasks_table():
         
         # Kerakli ustunlar ro'yxati
         required_columns = [
-            ('id', 'SERIAL PRIMARY KEY'),
+            ('id', 'INTEGER PRIMARY KEY AUTOINCREMENT'),
             ('task_id', 'TEXT UNIQUE'),
             ('title', 'TEXT NOT NULL'),
             ('description', 'TEXT'),
@@ -2204,7 +2209,7 @@ def update_user_tasks_table():
             # Yangi jadval yaratish
             create_sql = '''
                 CREATE TABLE user_tasks (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     task_id TEXT UNIQUE,
                     title TEXT NOT NULL,
                     description TEXT,
@@ -2243,7 +2248,7 @@ def update_user_tasks_table():
                     if 'DEFAULT' in column_type:
                         try:
                             # Avval barcha qatorlarga default qiymat berish
-                            update_sql = f'UPDATE user_tasks SET {column_name} = %s WHERE {column_name} IS NULL'
+                            update_sql = f'UPDATE user_tasks SET {column_name} = ? WHERE {column_name} IS NULL'
                             default_value = column_type.split()[-1].strip('"\'')
                             c.execute(update_sql, (default_value,))
                         except:
@@ -2275,7 +2280,7 @@ def update_tables():
     
     # 2. users jadvali
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # users jadvali ustunlarini tekshirish
@@ -2331,7 +2336,7 @@ def admin_panel():
     if role not in ['admin', 'debugger']:
         return redirect('/dashboard')
     
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     cursor = conn.cursor()
     
     # -------------------------------
@@ -2439,7 +2444,7 @@ def api_get_users():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         c.execute('''
@@ -2472,7 +2477,7 @@ def api_get_users():
 #         params = []
         
 #         if user_role != 'debugger' and admin_district:
-#             district_filter = "AND u.district = %s"
+#             district_filter = "AND u.district = ?"
 #             params.append(admin_district)
         
 #         # 1. Umumiy statistika
@@ -2611,7 +2616,7 @@ def api_ratings_table():
         
         # Qidirish
         if search_term:
-            where_clauses.append("(u.full_name LIKE %s OR u.user_id LIKE %s)")
+            where_clauses.append("(u.full_name LIKE ? OR u.user_id LIKE ?)")
             params.append(f'%{search_term}%')
             params.append(f'%{search_term}%')
         
@@ -2812,7 +2817,7 @@ def import_excel():
                 initial_rating = int(row.get('InitialRating', row.get('Boshlang\'ich reyting', 10)))
                 
                 # Mavjudligini tekshirish
-                cursor.execute('SELECT id FROM users WHERE id = %s', (user_id,))
+                cursor.execute('SELECT id FROM users WHERE id = ?', (user_id,))
                 existing = cursor.fetchone()
                 
                 if existing:
@@ -2961,7 +2966,7 @@ def api_get_tasks():
 #     conn = get_db()
 #     cursor = conn.cursor()
     
-#     cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+#     cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
 #     user = cursor.fetchone()
 #     conn.close()
     
@@ -3122,9 +3127,9 @@ def api_get_report_files(report_id):
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
-        c.execute("SELECT file_path FROM reports WHERE id = %s", (report_id,))
+        c.execute("SELECT file_path FROM reports WHERE id = ?", (report_id,))
         result = c.fetchone()
         conn.close()
         
@@ -3144,7 +3149,7 @@ def api_get_report_files(report_id):
 def api_committee_stats():
     """Qo'mita va yoshlar guruhi statistikasi"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Qo'mita bo'yicha statistika
@@ -3193,7 +3198,7 @@ def api_rating_stats_v2():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. Umumiy statistikalar
@@ -3279,7 +3284,7 @@ def api_rating_stats_v2():
         
         # 5. Faol foydalanuvchilar (oxirgi 30 kunda login qilgan)
         thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute("SELECT COUNT(*) FROM users WHERE role = 'user' AND last_login > %s", (thirty_days_ago,))
+        c.execute("SELECT COUNT(*) FROM users WHERE role = 'user' AND last_login > ?", (thirty_days_ago,))
         active_users = c.fetchone()[0] or 0
         
         # 6. Baholangan hisobotlar soni
@@ -3314,7 +3319,7 @@ def api_tasks_list_v2():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Avval user_tasks jadvalini tekshirish
@@ -3442,7 +3447,7 @@ def api_admin_create_task_v2():
         # Topshiriq ID generatsiya qilish
         task_id = f"TASK-{datetime.now().strftime('%Y%m%d%H%M%S')}-{random.randint(1000, 9999)}"
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # user_tasks jadvalini tekshirish
@@ -3451,7 +3456,7 @@ def api_admin_create_task_v2():
             # Agar jadval yo'q bo'lsa, yaratish
             c.execute('''
                 CREATE TABLE IF NOT EXISTS user_tasks (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     task_id TEXT UNIQUE,
                     title TEXT NOT NULL,
                     description TEXT,
@@ -3597,7 +3602,7 @@ def api_rate_report_post(report_id):
         
         total = faollik + tashabbus + intizom + tasir
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Baholashni saqlash
@@ -3607,7 +3612,7 @@ def api_rate_report_post(report_id):
                  (report_id, faollik, tashabbus, intizom, tasir, total, comment))
         
         # Hisobot holatini yangilash
-        c.execute("UPDATE reports SET status = 'rated', admin_comment = %s WHERE id = %s", 
+        c.execute("UPDATE reports SET status = 'rated', admin_comment = ? WHERE id = ?", 
                  (comment, report_id))
         
         # Foydalanuvchi reytingini yangilash
@@ -3655,7 +3660,7 @@ def api_rating_dashboard():
     
     # Agar debugger bo'lsa, davom etish
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. UMUMIY STATISTIKA
@@ -3680,7 +3685,7 @@ def api_rating_dashboard():
         
         # Aktiv foydalanuvchilar (oxirgi 30 kunda login qilgan)
         thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute("SELECT COUNT(*) FROM users WHERE role = 'user' AND last_login > %s", (thirty_days_ago,))
+        c.execute("SELECT COUNT(*) FROM users WHERE role = 'user' AND last_login > ?", (thirty_days_ago,))
         active_result = c.fetchone()
         stats['active_users'] = active_result[0] if active_result else 0
         
@@ -3882,7 +3887,7 @@ def api_check_tables():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # user_tasks jadvali strukturasini tekshirish
@@ -3936,7 +3941,7 @@ def api_recreate_user_tasks():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. Avval jadvaldagi barcha ma'lumotlarni saqlab olamiz (agar kerak bo'lsa)
@@ -3956,7 +3961,7 @@ def api_recreate_user_tasks():
         # 3. Yangi jadval yaratish
         create_sql = '''
             CREATE TABLE user_tasks (
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 task_id TEXT UNIQUE,
                 title TEXT NOT NULL,
                 description TEXT,
@@ -4066,7 +4071,7 @@ def execute_sql_command(sql_query):
                 'error': 'Only SELECT queries are allowed for security'
             })
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
         
@@ -4093,7 +4098,7 @@ def execute_sql_command(sql_query):
 def check_tables_command():
     """Jadvallarni tekshirish"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Barcha jadvallarni olish
@@ -4132,6 +4137,7 @@ def api_console_system_info():
     try:
         import platform
         import psutil
+        import os
         
         system_info = {
             'python_version': platform.python_version(),
@@ -4190,7 +4196,7 @@ def get_system_uptime():
 #         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
 #     try:
-#         conn = get_db()
+#         conn = sqlite3.connect(app.config['DATABASE'])
 #         c = conn.cursor()
         
 #         admin_district = session.get('district')
@@ -4209,10 +4215,10 @@ def get_system_uptime():
 #         params = []
         
 #         if role != 'debugger':
-#             query += " AND u.district = %s"
+#             query += " AND u.district = ?"
 #             params.append(admin_district)
 #         elif district_filter != 'all':
-#             query += " AND u.district = %s"
+#             query += " AND u.district = ?"
 #             params.append(district_filter)
         
 #         # Reyting filteri
@@ -4225,7 +4231,7 @@ def get_system_uptime():
         
 #         # Qidirish
 #         if search_term:
-#             query += " AND (u.full_name LIKE %s OR u.user_id LIKE %s)"
+#             query += " AND (u.full_name LIKE ? OR u.user_id LIKE ?)"
 #             params.append(f'%{search_term}%')
 #             params.append(f'%{search_term}%')
         
@@ -4247,10 +4253,10 @@ def get_system_uptime():
 #         for user in users:
 #             user_id = user[0]
             
-#             c.execute("SELECT COUNT(*) FROM reports WHERE user_id = %s", (user_id,))
+#             c.execute("SELECT COUNT(*) FROM reports WHERE user_id = ?", (user_id,))
 #             total_reports = c.fetchone()[0] or 0
             
-#             c.execute("SELECT COUNT(*) FROM reports WHERE user_id = %s AND status = 'rated'", (user_id,))
+#             c.execute("SELECT COUNT(*) FROM reports WHERE user_id = ? AND status = 'rated'", (user_id,))
 #             rated_reports = c.fetchone()[0] or 0
             
 #             rating = user[3] or 0
@@ -4313,12 +4319,12 @@ def api_get_ratings():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # user_ratings jadvalini tekshirish va yaratish
         c.execute('''CREATE TABLE IF NOT EXISTS user_ratings (
-                        id SERIAL PRIMARY KEY,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id TEXT,
                         full_name TEXT,
                         district TEXT,
@@ -4402,12 +4408,12 @@ def api_update_ratings():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # user_ratings jadvalini tekshirish va yaratish
         c.execute('''CREATE TABLE IF NOT EXISTS user_ratings (
-                        id SERIAL PRIMARY KEY,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id TEXT UNIQUE,
                         full_name TEXT,
                         district TEXT,
@@ -4459,12 +4465,12 @@ def generate_test_ratings():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()  # conn qo'shildi
+        conn = sqlite3.connect(app.config['DATABASE'])  # conn qo'shildi
         cursor = conn.cursor()  # cursor qo'shildi
         
         # ratings jadvalini tekshirish (ratings_new deb nomlaymiz)
         cursor.execute('''CREATE TABLE IF NOT EXISTS ratings_new (
-                            id SERIAL PRIMARY KEY,
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_id TEXT,
                             full_name TEXT,
                             district TEXT,
@@ -4509,7 +4515,7 @@ def api_chart_data():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. Hududlar bo'yicha foydalanuvchilar soni
@@ -4627,12 +4633,12 @@ def api_create_task():
         # Topshiriq ID generatsiya qilish
         task_id = f"TASK-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # user_tasks jadvalini tekshirish va yaratish
         c.execute('''CREATE TABLE IF NOT EXISTS user_tasks (
-                        id SERIAL PRIMARY KEY,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         task_id TEXT UNIQUE,
                         title TEXT NOT NULL,
                         description TEXT,
@@ -4777,7 +4783,7 @@ def complete_task(task_id):
             UPDATE tasks 
             SET status = 'completed', 
                 completed_at = datetime('now')
-            WHERE task_id = %s
+            WHERE task_id = ?
         """, (task_id,))
         
         conn.commit()
@@ -4795,7 +4801,7 @@ def complete_task(task_id):
 def delete_task(task_id):
     """Topshiriqni o'chirish"""
     try:
-        cursor.execute("DELETE FROM user_tasks WHERE task_id = %s", (task_id,))
+        cursor.execute("DELETE FROM user_tasks WHERE task_id = ?", (task_id,))
         conn.commit()
         
         return jsonify({
@@ -4989,7 +4995,7 @@ def drop_table():
         cursor = conn.cursor()
         
         # Jadval mavjudligini tekshirish
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=%s", (table_name,))
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
         if not cursor.fetchone():
             conn.close()
             return jsonify({
@@ -5036,7 +5042,7 @@ def api_execute_query():
         if not query.upper().startswith('SELECT'):
             return jsonify({'success': False, 'error': 'Faqat SELECT so\'rovlariga ruxsat'})
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         conn.row_factory = sqlite3.Row  # Dictionary formatda qaytarish
         c = conn.cursor()
         
@@ -5094,7 +5100,7 @@ def api_generate_test_logs():
         
         test_users = ['debug001', 'admin001', 'FR-2024-001', 'FR-2024-002']
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         for _ in range(20):  # 20 ta test log
@@ -5125,22 +5131,22 @@ def api_generate_test_logs():
 def api_admin_delete_user(user_id):
     """Foydalanuvchini o'chirish"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Foydalanuvchi mavjudligini tekshirish
-        c.execute("SELECT full_name FROM users WHERE user_id=%s", (user_id,))
+        c.execute("SELECT full_name FROM users WHERE user_id=?", (user_id,))
         user = c.fetchone()
         if not user:
             conn.close()
             return jsonify({'success': False, 'error': 'Foydalanuvchi topilmadi'}), 404
         
         # Foydalanuvchini o'chirish
-        c.execute("DELETE FROM users WHERE user_id=%s", (user_id,))
+        c.execute("DELETE FROM users WHERE user_id=?", (user_id,))
         
         # Bog'liq ma'lumotlarni ham o'chirish (agar kerak bo'lsa)
-        c.execute("DELETE FROM reports WHERE user_id=%s", (user_id,))
-        c.execute("DELETE FROM user_tasks WHERE assigned_to=%s", (user_id,))
+        c.execute("DELETE FROM reports WHERE user_id=?", (user_id,))
+        c.execute("DELETE FROM user_tasks WHERE assigned_to=?", (user_id,))
         
         conn.commit()
         conn.close()
@@ -5169,11 +5175,11 @@ def api_admin_reset_password(user_id):
         if len(new_password) < 6:
             return jsonify({'success': False, 'error': 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'}), 400
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Foydalanuvchi mavjudligini tekshirish
-        c.execute("SELECT full_name FROM users WHERE user_id=%s", (user_id,))
+        c.execute("SELECT full_name FROM users WHERE user_id=?", (user_id,))
         user = c.fetchone()
         if not user:
             conn.close()
@@ -5181,7 +5187,7 @@ def api_admin_reset_password(user_id):
         
         # Parolni yangilash
         hashed_password = generate_password_hash(new_password)
-        c.execute("UPDATE users SET password=%s WHERE user_id=%s", 
+        c.execute("UPDATE users SET password=? WHERE user_id=?", 
                  (hashed_password, user_id))
         
         conn.commit()
@@ -5225,7 +5231,7 @@ def api_process_excel():
             if col not in df.columns:
                 return jsonify({'success': False, 'error': f'{col} ustuni topilmadi'})
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         success_count = 0
@@ -5251,7 +5257,7 @@ def api_process_excel():
                     phone = '+998' + phone[-9:]
                 
                 # Foydalanuvchini qo'shish/yangilash
-                c.execute('SELECT user_id FROM users WHERE user_id = %s', (user_id,))
+                c.execute('SELECT user_id FROM users WHERE user_id = ?', (user_id,))
                 existing = c.fetchone()
                 
                 if existing:
@@ -5303,7 +5309,7 @@ def api_export_reports():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         c.execute('''
@@ -5358,7 +5364,7 @@ def api_export_ratings():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         c.execute('''
@@ -5419,12 +5425,12 @@ def generate_test_tasks():
     ]
     
     try:
-        conn = get_db()  # conn qo'shildi
+        conn = sqlite3.connect(app.config['DATABASE'])  # conn qo'shildi
         cursor = conn.cursor()  # cursor qo'shildi
         
         # tasks_new jadvalini yaratish
         cursor.execute('''CREATE TABLE IF NOT EXISTS tasks_new (
-                            id SERIAL PRIMARY KEY,
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                             title TEXT,
                             description TEXT,
                             assigned_to TEXT,
@@ -5438,7 +5444,7 @@ def generate_test_tasks():
         for task in test_tasks:
             cursor.execute("""
                 INSERT INTO tasks_new (title, description, assigned_to, deadline, points, task_type, status, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, 'pending', datetime('now'))
+                VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
             """, task)
         
         conn.commit()
@@ -5464,11 +5470,11 @@ def api_delete_task(task_id):
         return jsonify({'success': True}), 200
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Avval topshiriq mavjudligini tekshirish
-        c.execute("SELECT * FROM user_tasks WHERE task_id = %s", (task_id,))
+        c.execute("SELECT * FROM user_tasks WHERE task_id = ?", (task_id,))
         task = c.fetchone()
         
         if not task:
@@ -5477,10 +5483,10 @@ def api_delete_task(task_id):
         # Admin/Debugger huquqlarini tekshirish
         if session.get('role') == 'debugger':
             # Debugger barcha topshiriqlarni o'chira oladi
-            c.execute("DELETE FROM user_tasks WHERE task_id = %s", (task_id,))
+            c.execute("DELETE FROM user_tasks WHERE task_id = ?", (task_id,))
         else:
             # Admin faqat o'zi yaratgan topshiriqlarni o'chira oladi
-            c.execute("SELECT assigned_by FROM user_tasks WHERE task_id = %s", (task_id,))
+            c.execute("SELECT assigned_by FROM user_tasks WHERE task_id = ?", (task_id,))
             task_creator = c.fetchone()
             
             if not task_creator or task_creator[0] != session['user_id']:
@@ -5489,7 +5495,7 @@ def api_delete_task(task_id):
                     'error': 'Siz faqat o\'zingiz yaratgan topshiriqlarni o\'chira olasiz'
                 })
             
-            c.execute("DELETE FROM user_tasks WHERE task_id = %s AND assigned_by = %s", 
+            c.execute("DELETE FROM user_tasks WHERE task_id = ? AND assigned_by = ?", 
                      (task_id, session['user_id']))
         
         deleted_rows = conn.total_changes
@@ -5537,11 +5543,11 @@ def api_update_task(task_id):
         if not data:
             return jsonify({'success': False, 'error': 'Ma\'lumotlar yo\'q'})
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Avval topshiriq mavjudligini tekshirish
-        c.execute("SELECT * FROM user_tasks WHERE task_id = %s", (task_id,))
+        c.execute("SELECT * FROM user_tasks WHERE task_id = ?", (task_id,))
         task = c.fetchone()
         
         if not task:
@@ -5563,51 +5569,51 @@ def api_update_task(task_id):
         update_values = []
         
         if 'title' in data:
-            update_fields.append("title = %s")
+            update_fields.append("title = ?")
             update_values.append(data['title'])
         
         if 'description' in data:
-            update_fields.append("description = %s")
+            update_fields.append("description = ?")
             update_values.append(data['description'])
         
         if 'assigned_to' in data:
-            update_fields.append("assigned_to = %s")
+            update_fields.append("assigned_to = ?")
             update_values.append(data['assigned_to'])
         
         if 'deadline' in data:
-            update_fields.append("deadline = %s")
+            update_fields.append("deadline = ?")
             update_values.append(data['deadline'])
         
         if 'points' in data:
-            update_fields.append("points = %s")
+            update_fields.append("points = ?")
             update_values.append(int(data['points']))
         
         if 'task_type' in data:
-            update_fields.append("task_type = %s")
+            update_fields.append("task_type = ?")
             update_values.append(data['task_type'])
         
         if 'priority' in data:
-            update_fields.append("priority = %s")
+            update_fields.append("priority = ?")
             update_values.append(data['priority'])
         
         if 'status' in data:
-            update_fields.append("status = %s")
+            update_fields.append("status = ?")
             update_values.append(data['status'])
         
         if 'progress' in data:
-            update_fields.append("progress = %s")
+            update_fields.append("progress = ?")
             update_values.append(data['progress'])
         
         if 'feedback' in data:
-            update_fields.append("feedback = %s")
+            update_fields.append("feedback = ?")
             update_values.append(data['feedback'])
         
         if 'rating_given' in data:
-            update_fields.append("rating_given = %s")
+            update_fields.append("rating_given = ?")
             update_values.append(data['rating_given'])
         
         if file_path:
-            update_fields.append("file_path = %s")
+            update_fields.append("file_path = ?")
             update_values.append(file_path)
         
         if not update_fields:
@@ -5616,12 +5622,12 @@ def api_update_task(task_id):
         # Admin/Debugger huquqlarini tekshirish
         if session.get('role') == 'debugger':
             # Debugger barcha topshiriqlarni yangilay oladi
-            query = f"UPDATE user_tasks SET {', '.join(update_fields)} WHERE task_id = %s"
+            query = f"UPDATE user_tasks SET {', '.join(update_fields)} WHERE task_id = ?"
             update_values.append(task_id)
             c.execute(query, update_values)
         else:
             # Admin faqat o'zi yaratgan topshiriqlarni yangilay oladi
-            c.execute("SELECT assigned_by FROM user_tasks WHERE task_id = %s", (task_id,))
+            c.execute("SELECT assigned_by FROM user_tasks WHERE task_id = ?", (task_id,))
             task_creator = c.fetchone()
             
             if not task_creator or task_creator[0] != session['user_id']:
@@ -5630,7 +5636,7 @@ def api_update_task(task_id):
                     'error': 'Siz faqat o\'zingiz yaratgan topshiriqlarni yangilay olasiz'
                 })
             
-            query = f"UPDATE user_tasks SET {', '.join(update_fields)} WHERE task_id = %s AND assigned_by = %s"
+            query = f"UPDATE user_tasks SET {', '.join(update_fields)} WHERE task_id = ? AND assigned_by = ?"
             update_values.extend([task_id, session['user_id']])
             c.execute(query, update_values)
         
@@ -5674,7 +5680,7 @@ def api_rate_report(report_id):
         
         total = faollik + tashabbus + intizom + tasir
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Baholashni saqlash
@@ -5684,7 +5690,7 @@ def api_rate_report(report_id):
                  (report_id, faollik, tashabbus, intizom, tasir, total, comment))
         
         # Hisobot holatini yangilash
-        c.execute("UPDATE reports SET status = 'rated', admin_comment = %s WHERE id = %s", 
+        c.execute("UPDATE reports SET status = 'rated', admin_comment = ? WHERE id = ?", 
                  (comment, report_id))
         
         # Foydalanuvchi reytingini yangilash
@@ -5715,7 +5721,7 @@ def api_rating_stats():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # -------------------------------
@@ -5805,7 +5811,7 @@ def filter_ratings():
         
         # Hudud bo'yicha filtr
         if district != 'all':
-            query += " AND u.district = %s"
+            query += " AND u.district = ?"
             params.append(district)
         
         # Reyting darajasi bo'yicha filtr
@@ -5882,7 +5888,7 @@ def api_tasks_list():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # 1. Statistikalar
@@ -6009,25 +6015,25 @@ def filter_tasks():
         
         # Holat bo'yicha filtr
         if status != 'all':
-            query += " AND t.status = %s"
+            query += " AND t.status = ?"
             params.append(status)
         
         # Muddat bo'yicha filtr
         if deadline != 'all':
             today = datetime.now().date()
             if deadline == 'today':
-                query += " AND DATE(t.deadline) = DATE(%s)"
+                query += " AND DATE(t.deadline) = DATE(?)"
                 params.append(today)
             elif deadline == 'week':
-                query += " AND t.deadline BETWEEN DATE(%s) AND DATE(%s, '+7 days')"
+                query += " AND t.deadline BETWEEN DATE(?) AND DATE(?, '+7 days')"
                 params.append(today)
                 params.append(today)
             elif deadline == 'month':
-                query += " AND t.deadline BETWEEN DATE(%s) AND DATE(%s, '+30 days')"
+                query += " AND t.deadline BETWEEN DATE(?) AND DATE(?, '+30 days')"
                 params.append(today)
                 params.append(today)
             elif deadline == 'overdue':
-                query += " AND t.deadline < DATE(%s) AND t.status NOT IN ('completed', 'cancelled')"
+                query += " AND t.deadline < DATE(?) AND t.status NOT IN ('completed', 'cancelled')"
                 params.append(today)
         
         query += " ORDER BY t.deadline ASC"
@@ -6150,7 +6156,7 @@ def api_get_task_by_id(task_id):
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         c.execute('''
@@ -6191,7 +6197,7 @@ def api_get_reports():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         c.execute('''
@@ -6262,7 +6268,7 @@ def api_view_report(report_id):
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         c.execute('''
@@ -6333,11 +6339,11 @@ def api_approve_report(report_id):
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Hisobot holatini yangilash
-        c.execute("UPDATE reports SET status = 'approved' WHERE id = %s", (report_id,))
+        c.execute("UPDATE reports SET status = 'approved' WHERE id = ?", (report_id,))
         
         # Foydalanuvchi reytingini yangilash (+5 ball)
         c.execute('''
@@ -6371,10 +6377,10 @@ def api_reject_report(report_id):
         data = request.json
         comment = data.get('comment', '')
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
-        c.execute("UPDATE reports SET status = 'rejected', admin_comment = %s WHERE id = %s", 
+        c.execute("UPDATE reports SET status = 'rejected', admin_comment = ? WHERE id = ?", 
                  (comment, report_id))
         
         conn.commit()
@@ -6400,7 +6406,7 @@ def api_reject_report(report_id):
 #         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
 #     try:
-#         conn = get_db()
+#         conn = sqlite3.connect(app.config['DATABASE'])
 #         c = conn.cursor()
         
 #         # Agar debugger bo'lsa, barcha topshiriqlar
@@ -6483,7 +6489,7 @@ def debugger():
         flash('Sizda super admin huquqi yo\'q!')
         return redirect(url_for('dashboard'))
     
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
     # Oddiy va ishonchli querylar
@@ -6512,7 +6518,7 @@ def debugger():
     # 5. Aktiv foydalanuvchilar
     try:
         seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute("SELECT COUNT(*) FROM users WHERE last_login IS NOT NULL AND last_login > %s", (seven_days_ago,))
+        c.execute("SELECT COUNT(*) FROM users WHERE last_login IS NOT NULL AND last_login > ?", (seven_days_ago,))
         active_users_result = c.fetchone()
         active_users = active_users_result[0] if active_users_result else 0
     except:
@@ -6555,7 +6561,7 @@ def debugger():
 
 def get_db_connection():
     """Baza ulanishini olish"""
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -6609,7 +6615,7 @@ def is_user_active(user_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT last_login FROM users WHERE id = %s', (user_id,))
+        cursor.execute('SELECT last_login FROM users WHERE id = ?', (user_id,))
         result = cursor.fetchone()
         conn.close()
         
@@ -6635,9 +6641,9 @@ def set_password():
             return render_template('set_password.html', user_id=user_id)
         
         hashed_pw = generate_password_hash(new_password)
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
-        c.execute("UPDATE users SET password = %s WHERE user_id = %s", (hashed_pw, user_id))
+        c.execute("UPDATE users SET password = ? WHERE user_id = ?", (hashed_pw, user_id))
         conn.commit()
         conn.close()
         
@@ -6652,11 +6658,11 @@ def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
     # Foydalanuvchi ma'lumotlari
-    c.execute("SELECT * FROM users WHERE user_id = %s", (session['user_id'],))
+    c.execute("SELECT * FROM users WHERE user_id = ?", (session['user_id'],))
     user = c.fetchone()
     
     # Baholash tarixi
@@ -6676,7 +6682,7 @@ def profile():
 #     if 'user_id' not in session:
 #         return redirect(url_for('login'))
     
-#     conn = get_db()
+#     conn = sqlite3.connect(app.config['DATABASE'])
 #     c = conn.cursor()
     
 #     c.execute('''SELECT r.*, rt.total, rt.admin_comment, 
@@ -6696,7 +6702,7 @@ def tasks_page():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
     c.execute("SELECT * FROM user_tasks ORDER BY created_date DESC")
@@ -6717,11 +6723,11 @@ def download_file(filename):
     
     if os.path.exists(file_path):
         # Ruxsatni tekshirish
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Task fayllarini tekshirish (birinchi)
-        c.execute("SELECT assigned_to, assigned_by FROM user_tasks WHERE file_path = %s", (safe_filename,))
+        c.execute("SELECT assigned_to, assigned_by FROM user_tasks WHERE file_path = ?", (safe_filename,))
         task = c.fetchone()
         
         if task:
@@ -6731,12 +6737,12 @@ def download_file(filename):
                 return send_file(file_path, as_attachment=True)
         
         # Fayl nomini bazada qidirish (reports)
-        c.execute("SELECT user_id FROM reports WHERE file_path = %s", (safe_filename,))
+        c.execute("SELECT user_id FROM reports WHERE file_path = ?", (safe_filename,))
         report = c.fetchone()
         
         # Agar fayl bazada topilmasa, boshqa fayllarni tekshirish
         if not report:
-            c.execute("SELECT user_id FROM reports WHERE file_path LIKE %s", (f'%{safe_filename}%',))
+            c.execute("SELECT user_id FROM reports WHERE file_path LIKE ?", (f'%{safe_filename}%',))
             report = c.fetchone()
         
         conn.close()
@@ -6809,11 +6815,11 @@ def api_add_user():
         if not re.match(r'^\d{4}$', user_id):
             return jsonify({'success': False, 'error': 'ID 4 ta raqamdan iborat bo\'lishi kerak'}), 400
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Mavjudligini tekshirish
-        c.execute("SELECT user_id FROM users WHERE user_id = %s", (user_id,))
+        c.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
         if c.fetchone():
             conn.close()
             return jsonify({'success': False, 'error': f'Bu ID ({user_id}) allaqachon mavjud'}), 400
@@ -6868,7 +6874,7 @@ def api_import_excel():
         update_existing = request.form.get('update_existing', 'true') == 'true'
         skip_duplicates = request.form.get('skip_duplicates', 'true') == 'true'
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         added = 0
@@ -6896,7 +6902,7 @@ def api_import_excel():
                 initial_rating = int(row['InitialRating'])
                 
                 # Mavjudligini tekshirish
-                c.execute("SELECT user_id FROM users WHERE user_id = %s", (user_id,))
+                c.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
                 existing = c.fetchone()
                 
                 if existing:
@@ -7021,7 +7027,7 @@ def api_optimize_database():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()  # c o'zgaruvchisini aniqlaymiz
         
         # Oldin bazaning hajmini olamiz
@@ -7094,7 +7100,7 @@ def api_database_stats():
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Asosiy statistikalar
@@ -7113,7 +7119,7 @@ def api_database_stats():
         
         # Faol foydalanuvchilar (oxirgi 7 kunda)
         seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute("SELECT COUNT(*) FROM users WHERE last_login IS NOT NULL AND last_login > %s", (seven_days_ago,))
+        c.execute("SELECT COUNT(*) FROM users WHERE last_login IS NOT NULL AND last_login > ?", (seven_days_ago,))
         active_users_result = c.fetchone()
         active_users = active_users_result[0] if active_users_result else 0
         
@@ -7193,21 +7199,21 @@ def api_delete_user(user_id):
         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Foydalanuvchi mavjudligini tekshirish
-        c.execute("SELECT full_name FROM users WHERE user_id = %s", (user_id,))
+        c.execute("SELECT full_name FROM users WHERE user_id = ?", (user_id,))
         user = c.fetchone()
         
         if not user:
             return jsonify({'success': False, 'error': 'Foydalanuvchi topilmadi'})
         
         # Foydalanuvchini o'chirish
-        c.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
+        c.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
         
         # Uning hisobotlarini ham o'chirish (ixtiyoriy)
-        # c.execute("DELETE FROM reports WHERE user_id = %s", (user_id,))
+        # c.execute("DELETE FROM reports WHERE user_id = ?", (user_id,))
         
         conn.commit()
         conn.close()
@@ -7239,11 +7245,11 @@ def api_reset_password(user_id):
         new_password = generate_random_password_local()
         hashed_password = generate_password_hash(new_password)
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Parolni yangilash
-        c.execute("UPDATE users SET password = %s WHERE user_id = %s", (hashed_password, user_id))
+        c.execute("UPDATE users SET password = ? WHERE user_id = ?", (hashed_password, user_id))
         
         conn.commit()
         conn.close()
@@ -7276,11 +7282,11 @@ def api_edit_task(task_id):
             if field not in data or not data[field]:
                 return jsonify({'success': False, 'error': f'{field} maydoni to\'ldirilishi shart'})
         
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Topshiriq mavjudligini tekshirish
-        c.execute("SELECT assigned_by FROM user_tasks WHERE task_id = %s", (task_id,))
+        c.execute("SELECT assigned_by FROM user_tasks WHERE task_id = ?", (task_id,))
         existing_task = c.fetchone()
         
         if not existing_task:
@@ -7344,9 +7350,9 @@ def api_edit_user(user_id):
     
     if request.method == 'GET':
         try:
-            conn = get_db()
+            conn = sqlite3.connect(app.config['DATABASE'])
             c = conn.cursor()
-            c.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+            c.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
             user = c.fetchone()
             conn.close()
             
@@ -7377,7 +7383,7 @@ def api_edit_user(user_id):
         try:
             data = request.json
             
-            conn = get_db()
+            conn = sqlite3.connect(app.config['DATABASE'])
             c = conn.cursor()
             
             # Foydalanuvchini yangilash
@@ -7386,52 +7392,52 @@ def api_edit_user(user_id):
             
             # Asosiy maydonlar
             if 'full_name' in data:
-                update_fields.append("full_name = %s")
+                update_fields.append("full_name = ?")
                 update_values.append(data['full_name'])
             
             if 'district' in data:
-                update_fields.append("district = %s")
+                update_fields.append("district = ?")
                 update_values.append(data['district'])
             
             if 'age' in data:
-                update_fields.append("age = %s")
+                update_fields.append("age = ?")
                 update_values.append(data['age'])
             
             if 'role' in data:
                 # Admin faqat user/admin rolini o'zgartira oladi, debugger bo'lsa ham
                 current_role = session.get('role')
                 if current_role == 'debugger' or data['role'] in ['user', 'admin']:
-                    update_fields.append("role = %s")
+                    update_fields.append("role = ?")
                     update_values.append(data['role'])
                 else:
                     return jsonify({'success': False, 'error': 'Siz faqat user/admin rolini o\'zgartira olasiz'})
             
             if 'rating' in data:
-                update_fields.append("rating = %s")
+                update_fields.append("rating = ?")
                 update_values.append(data['rating'])
             
             if 'phone' in data:
-                update_fields.append("phone = %s")
+                update_fields.append("phone = ?")
                 update_values.append(data['phone'])
             
             if 'yoshlar_guruhi' in data:
-                update_fields.append("yoshlar_guruhi = %s")
+                update_fields.append("yoshlar_guruhi = ?")
                 update_values.append(data['yoshlar_guruhi'])
             
             if 'qomita' in data:
-                update_fields.append("qomita = %s")
+                update_fields.append("qomita = ?")
                 update_values.append(data['qomita'])
             
             # Parolni yangilash (agar berilgan bo'lsa)
             if 'password' in data and data['password']:
                 hashed_password = generate_password_hash(data['password'])
-                update_fields.append("password = %s")
+                update_fields.append("password = ?")
                 update_values.append(hashed_password)
             
             # Agar o'zgartiriladigan maydonlar bo'lsa
             if update_fields:
                 update_values.append(user_id)
-                query = f"UPDATE users SET {', '.join(update_fields)} WHERE user_id = %s"
+                query = f"UPDATE users SET {', '.join(update_fields)} WHERE user_id = ?"
                 c.execute(query, update_values)
                 
                 conn.commit()
@@ -7476,7 +7482,7 @@ def api_import_database():
         backup_path = os.path.join(app.config['UPLOAD_FOLDER'], backup_filename)
         
         with open(backup_path, 'w', encoding='utf-8') as f:
-            conn = get_db()
+            conn = sqlite3.connect(app.config['DATABASE'])
             
             # Barcha jadvallarni dump qilish
             cursor = conn.cursor()
@@ -7485,7 +7491,7 @@ def api_import_database():
             
             for table in tables:
                 table_name = table[0]
-                cursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name=%s", (table_name,))
+                cursor.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
                 create_table_sql = cursor.fetchone()
                 if create_table_sql:
                     f.write(create_table_sql[0] + ";\n\n")
@@ -7515,7 +7521,7 @@ def api_import_database():
             conn.close()
         
         # Yangi SQL faylni ishga tushirish
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         cursor = conn.cursor()
         
         # SQL komandalarni ajratish
@@ -7549,7 +7555,7 @@ def api_import_database():
 def safe_log_action(user_id, action, details):
     """Xatolarga bardoshli log yozish funksiyasi"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Jadval mavjudligini tekshirish
@@ -7558,7 +7564,7 @@ def safe_log_action(user_id, action, details):
         if not c.fetchone():
             # Agar jadval yo'q bo'lsa, yaratish
             c.execute('''CREATE TABLE system_logs (
-                            id SERIAL PRIMARY KEY,
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_id TEXT,
                             action TEXT,
                             details TEXT,
@@ -7584,7 +7590,7 @@ def safe_log_action(user_id, action, details):
 #         return jsonify({'success': False, 'error': 'Ruxsat yo\'q'})
     
 #     try:
-#         conn = get_db()
+#         conn = sqlite3.connect(app.config['DATABASE'])
 #         c = conn.cursor()
 #         c.execute("SELECT * FROM users ORDER BY id")
 #         users = c.fetchall()
@@ -7675,7 +7681,7 @@ def add_points_to_user(user_id):
         cursor = conn.cursor()
         
         # Foydalanuvchini topish
-        cursor.execute('SELECT rating FROM users WHERE user_id = %s', (user_id,))
+        cursor.execute('SELECT rating FROM users WHERE user_id = ?', (user_id,))
         user = cursor.fetchone()
         
         if not user:
@@ -7687,7 +7693,7 @@ def add_points_to_user(user_id):
         new_rating = min(20, current_rating + points)  # Maksimum 20
         
         # Yangilash
-        cursor.execute('UPDATE users SET rating = %s WHERE user_id = %s', 
+        cursor.execute('UPDATE users SET rating = ? WHERE user_id = ?', 
                       (new_rating, user_id))
         
         # Log yozish
@@ -7782,7 +7788,7 @@ def api_export_database():
     
     try:
         # Bazaning to'liq nusxasini SQL formatda yaratish
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         cursor = conn.cursor()
         
         # Barcha jadvallarni olish
@@ -7798,7 +7804,7 @@ def api_export_database():
             sql_dump += f"\n-- Table: {table_name}\n"
             
             # Table schema
-            cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=%s", (table_name,))
+            cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
             create_table_sql = cursor.fetchone()
             if create_table_sql:
                 sql_dump += create_table_sql[0] + ";\n\n"
@@ -7858,12 +7864,12 @@ def generate_random_password(length=8):
 def log_action(user_id, action, details):
     """Sistem loglarini yozish"""
     try:
-        conn = get_db()
+        conn = sqlite3.connect(app.config['DATABASE'])
         c = conn.cursor()
         
         # Jadval mavjudligini tekshirish va yaratish
         c.execute('''CREATE TABLE IF NOT EXISTS system_logs (
-                        id SERIAL PRIMARY KEY,
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id TEXT,
                         action TEXT,
                         details TEXT,
@@ -7903,7 +7909,7 @@ def get_regions():
 # Test uchun sahifa - barcha foydalanuvchilarni ko'rish
 @app.route('/test_users')
 def test_users():
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     c.execute("SELECT user_id, full_name, role FROM users")
     users = c.fetchall()
@@ -7923,12 +7929,12 @@ if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
     # Jadvallarni yaratish (agar yo'q bo'lsa)
-    conn = get_db()
+    conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
     # Foydalanuvchilar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT UNIQUE,
                     password TEXT,
                     full_name TEXT,
@@ -7942,7 +7948,7 @@ if __name__ == '__main__':
     
     # Hisobotlar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS reports (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     month_year TEXT,
                     event_count INTEGER DEFAULT 0,
@@ -7961,7 +7967,7 @@ if __name__ == '__main__':
     
     # Baholar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS ratings (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     report_id INTEGER,
                     faollik INTEGER,
                     tashabbus INTEGER,
@@ -7975,7 +7981,7 @@ if __name__ == '__main__':
     
     # Topshiriqlar jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS tasks (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT,
                     description TEXT,
                     created_by TEXT,
@@ -7984,7 +7990,7 @@ if __name__ == '__main__':
     
     # Sistem loglari jadvali
     c.execute('''CREATE TABLE IF NOT EXISTS system_logs (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     action TEXT,
                     details TEXT,
