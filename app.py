@@ -7997,13 +7997,9 @@ if __name__ == '__main__':
     conn.commit()
     conn.close()
     
-port = int(os.environ.get("PORT", 5001))
-
-# Faqat localda debug va loglarni ko‘rsatish
-if os.environ.get("FLASK_ENV") != "production":
+    port = int(os.environ.get("PORT", 5001))
     print("=" * 50)
     print("🚀 Yoshlar Parlamenti Platformasi ISHGA TUSHIRILDI!")
-    print("=" * 50)
     print(f"🌐 Manzil: http://localhost:{port}")
     print("👑 Debugger login: debug001 / debug123")
     print("=" * 50)
