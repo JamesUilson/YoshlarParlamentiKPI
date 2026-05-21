@@ -1,5 +1,8 @@
 #app.py
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify, Response
 import os
 import psycopg2
@@ -21,6 +24,16 @@ import binascii
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key_here')
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+# Jinja2 custom date filter
+@app.template_filter('format_date')
+def format_date_filter(val):
+    if not val:
+        return '—'
+    if hasattr(val, 'strftime'):
+        return val.strftime('%Y-%m-%d')
+    # If it's a string
+    return str(val)[:10]
 
 # PostgreSQL ulanish URL
 _db_url = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL', '')

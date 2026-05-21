@@ -1128,7 +1128,7 @@
                                     <td>{{ user[7] if user[7] is not none else 0 }}/20</td>
 
                                     <!-- RO'YXATDAN O'TGAN: index 8 -->
-                                    <td>{{ user[8][:10] if user[8] else '—' }}</td>
+                                    <td>{{ user[8]|format_date }}</td>
                                     
                                     <!-- HARAKATLAR -->
                                     <td>
